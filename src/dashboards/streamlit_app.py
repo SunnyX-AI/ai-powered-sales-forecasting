@@ -50,13 +50,15 @@ except Exception as e:
 # -----------------------------
 # Tabs
 # -----------------------------
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Overview",
     "Predict (Revenue + Stockout)",
     "Predict Example (From Data)",
     "GenAI Ask (Copilot)",
-    "Pricing Elasticity"
+    "Pricing Elasticity",
+    "Monitoring (Confidence + Alerts)"
 ])
+
 
 
 
@@ -244,3 +246,51 @@ with tab5:
     except Exception as e:
         st.error("Failed to fetch elasticity data from API")
         st.exception(e)
+
+# -----------------------------
+# TAB 6: MONITORING
+# -----------------------------
+with tab6:
+    st.subheader("📉 Monitoring: Recent Predictions + Alerts")
+    st.caption("Calls: `GET /monitoring/recent` and `GET /monitoring/alerts`")
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.write("### Recent Predictions (latest first)")
+        try:
+            res = api_get("/monitoring/recent", params={"limit": 50})
+            res.raise_for_status()
+            items = res.json().get("items", [])
+            if not items:
+                st.info("No logs yet. Run a few predictions first.")
+            else:
+                log_df = pd.DataFrame(items)
+                st.dataframe(log_df, use_container_width=True)
+        except Exception as e:
+            st.error("Failed to load monitoring logs")
+            st.exception(e)
+
+    with col2:
+        st.write("### Alerts")
+        try:
+            res = api_get("/monitoring/alerts", params={"limit": 200})
+            res.raise_for_status()
+            alerts = res.json().get("alerts", [])
+
+            if not alerts:
+                st.success("No alerts ✅")
+            else:
+                for a in alerts:
+                    t = a.get("type", "info").upper()
+                    msg = a.get("message", "")
+                    if t == "RISK":
+                        st.error(f"**{t}**: {msg}")
+                    elif t == "WARNING":
+                        st.warning(f"**{t}**: {msg}")
+                    else:
+                        st.info(f"**{t}**: {msg}")
+        except Exception as e:
+            st.error("Failed to load alerts")
+            st.exception(e)
+
