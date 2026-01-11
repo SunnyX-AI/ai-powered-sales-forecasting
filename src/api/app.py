@@ -3,28 +3,27 @@ FastAPI app for SunnyBest Retail Demand Intelligence System.
 
 Endpoints:
 - GET  /health
-- POST /predict  -> revenue forecast + stockout probability
+- POST /predict  -> revenue forecast + stockout probability + risk band
 - GET  /predict/example -> run prediction using a real row from merged df
+- GET  /pricing/elasticity -> elasticity table
+- GET  /monitoring/recent -> recent prediction logs
+- GET  /monitoring/alerts -> simple alert rules
+- POST /ask -> GenAI copilot (experimental)
 """
 
 from __future__ import annotations
 
+import os
 from typing import Optional, Dict, Any, List
 
+import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 from src.models.predict import predict_from_row, predict_example_from_existing_data
 from src.monitoring.store import append_prediction_log, read_recent_predictions
 from src.monitoring.rules import generate_alerts
-
-
 from src.genai.copilot import run_copilot
-import os
-import pandas as pd
-
-
-
 
 
 app = FastAPI(
@@ -32,6 +31,30 @@ app = FastAPI(
     version="1.0.0",
     description="Forecast revenue and predict stockout risk. Built from the SunnyBest project pipeline."
 )
+
+# -----------------------------
+# Load artifacts at startup
+# -----------------------------
+
+# Elasticity table (pricing intelligence)
+ELASTICITY_PATH = os.getenv("ELASTICITY_PATH", "data/processed/elasticity_by_category.csv")
+
+
+def load_elasticity_table() -> pd.DataFrame:
+    if os.path.exists(ELASTICITY_PATH):
+        return pd.read_csv(ELASTICITY_PATH)
+    return pd.DataFrame(columns=["category", "price_elasticity"])
+
+
+ELASTICITY_TABLE = load_elasticity_table()
+
+
+# Minimal docs store (later you can load from files)
+DOCS: List[dict] = [
+    {"title": "Promo uplift summary", "text": "Promotions show uplift strongest in Mobile Phones and Accessories..."},
+    {"title": "Stockout model summary", "text": "Stockouts increase with high demand, promotions, and low starting inventory..."},
+    {"title": "Pricing optimisation summary", "text": "Pricing simulation suggests revenue responds to price changes differently by category..."},
+]
 
 
 # -----------------------------
@@ -65,6 +88,12 @@ class PredictRequest(BaseModel):
 class PredictResponse(BaseModel):
     predicted_revenue: float
     stockout_probability: float
+    stockout_risk_band: str
+
+
+class AskRequest(BaseModel):
+    query: str
+    payload: Optional[Dict[str, Any]] = None
 
 
 # -----------------------------
@@ -73,7 +102,6 @@ class PredictResponse(BaseModel):
 @app.get("/health")
 def health() -> Dict[str, Any]:
     return {"status": "ok"}
-
 
 
 # Pricing Intelligence
@@ -97,6 +125,24 @@ def get_elasticity(category: Optional[str] = None):
 def predict(req: PredictRequest) -> PredictResponse:
     payload = req.model_dump()
     out = predict_from_row(payload)
+
+    # Risk band (interpretable)
+    p = float(out.get("stockout_probability", 0.0))
+    if p >= 0.7:
+        band = "HIGH"
+    elif p >= 0.4:
+        band = "MEDIUM"
+    else:
+        band = "LOW"
+
+    out["stockout_risk_band"] = band
+
+    # Log for monitoring (do not break serving if logging fails)
+    try:
+        append_prediction_log(request_payload=payload, response_payload=out)
+    except Exception:
+        pass
+
     return PredictResponse(**out)
 
 
@@ -115,26 +161,6 @@ def predict_example(
     """
     return predict_example_from_existing_data(date=date, store_id=store_id, product_id=product_id)
 
-# load elasticity table (pricing intelligence)
-ELASTICITY_PATH = os.getenv("ELASTICITY_PATH", "data/processed/elasticity_by_category.csv")
-
-def load_elasticity_table() -> pd.DataFrame:
-    if os.path.exists(ELASTICITY_PATH):
-        return pd.read_csv(ELASTICITY_PATH)
-    return pd.DataFrame(columns=["category", "price_elasticity"])
-
-ELASTICITY_TABLE = load_elasticity_table()
-
-# minimal docs store (later we load from files)
-DOCS: List[dict] = [
-    {"title": "Promo uplift summary", "text": "Promotions show uplift strongest in Mobile Phones and Accessories..."},
-    {"title": "Stockout model summary", "text": "Stockouts increase with high demand, promotions, and low starting inventory..."},
-    {"title": "Pricing optimisation summary", "text": "Pricing simulation suggests revenue responds to price changes differently by category..."},
-]
-
-class AskRequest(BaseModel):
-    query: str
-    payload: Optional[Dict[str, Any]] = None
 
 @app.post("/ask")
 def ask(req: AskRequest):
@@ -142,3 +168,16 @@ def ask(req: AskRequest):
     return run_copilot(req.query, payload, DOCS)
 
 
+@app.get("/monitoring/recent")
+def monitoring_recent(limit: int = 50) -> Dict[str, Any]:
+    df = read_recent_predictions(limit=limit)
+    if df.empty:
+        return {"items": [], "note": "No logs yet. Make some /predict calls first."}
+    return {"items": df.to_dict(orient="records")}
+
+
+@app.get("/monitoring/alerts")
+def monitoring_alerts(limit: int = 200) -> Dict[str, Any]:
+    df = read_recent_predictions(limit=limit)
+    alerts = generate_alerts(df)
+    return {"alerts": alerts, "count": len(alerts)}
