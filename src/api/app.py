@@ -9,17 +9,21 @@ Endpoints:
 
 from __future__ import annotations
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 from src.models.predict import predict_from_row, predict_example_from_existing_data
+from src.monitoring.store import append_prediction_log, read_recent_predictions
+from src.monitoring.rules import generate_alerts
+
 
 from src.genai.copilot import run_copilot
 import os
 import pandas as pd
-from typing import List
+
+
 
 
 
