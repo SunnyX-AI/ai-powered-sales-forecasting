@@ -238,7 +238,7 @@ retail-sales-forecasting-genai/
 │   └── external/                  # External docs, notes
 
 ├── notebooks/
-│   ├── 01_eda.ipynb
+│   ├── 01_eda_sunnybest.ipynb
 │   ├── 02_baseline_forecast.ipynb
 │   ├── 03_ml_forecast_xgboost.ipynb
 │   ├── 04_stockout_classification.ipynb
@@ -249,15 +249,42 @@ retail-sales-forecasting-genai/
 │   └── 09_spark_data_processing.ipynb
 
 ├── src/
+│   ├── __init__.py
 │   ├── config/
 │   ├── data/
+│       ├── __init__.py
+│       ├── make_dataset.py
 │   ├── features/
+│       ├── __init__.py
+│       ├── build_features.py
 │   ├── models/
+│       ├── __init__.py
+│       ├── predict.py
+│       ├── train_forecast.py
+│       ├── train_stock.py
+│   ├── monitoring/
+│       ├── __init__.py
+│       ├── rules.py
+│       ├── store.py
 │   ├── pricing/
+│       ├── build_elasticity.py
+│       ├── elasticity.py
 │   ├── dashboards/
+|        ├── streamlit_app.py 
 │   ├── api/
+│       ├── __init__.py
+│       ├── app.py
 │   ├── spark/
+│       ├── __init__.py
+│       ├── spark_aggregations.py
+│       ├── spark_etl.py
+│       ├── spark_feature_engineering.py
+│       ├── spark_session.py
 │   ├── warehouse/
+│       ├── marts.sql
+│       ├── queries.sql
+│       ├── snowflake_schema.sql
+│       ├── staging_load.sql
 │   └── genai/
 │       ├── copilot.py
 │       ├── tools.py
@@ -268,6 +295,10 @@ retail-sales-forecasting-genai/
 
 ├── docker/
 │   └── Dockerfile
+│   └── Dockerfile.streamlit
+
+├── scripts/
+│   └── demo.sh
 
 ├── infra/
 │   └── terraform/
@@ -280,8 +311,10 @@ retail-sales-forecasting-genai/
 ├── tests/
 └── assets/
     ├── architecture.png
-    └── screenshots/
-
+│   └── screenshots/
+│       ├── streamlit_overview.png
+│       ├── streamlit_predict.png
+│       ├── streamlit_docs.png
 ```
 
 ### Version 2 (With GenAI Agents)
