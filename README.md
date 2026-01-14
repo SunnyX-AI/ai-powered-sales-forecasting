@@ -217,25 +217,19 @@ Generative AI is used as an **explanation and decision-support layer**, not as a
 ---
 
 ## 📁 Project Structure
-
-The repository currently follows **Version 1**.  
-**Version 2** is included to illustrate how the system would evolve to support
-GenAI agents, orchestration, and production-scale workflows.
-
-### Version 1
-
 ```text
 retail-sales-forecasting-genai/
 ├── README.md
-├── pyproject.toml                 # Optional: packaging configuration
-├── setup.cfg                      # Optional
-├── requirements.txt               # Python dependencies
-├── .gitignore                     # Files & folders ignored by Git
+├── pyproject.toml
+├── setup.cfg
+├── requirements.txt
+├── .gitignore
+├── Makefile                      # NEW: one-command workflows (train/test/lint/run)
 
 ├── data/
-│   ├── raw/                       # Generated CSVs (small mode)
-│   ├── processed/                 # Feature-ready datasets / Parquet (large mode, gitignored)
-│   └── external/                  # External docs, notes
+│   ├── raw/
+│   ├── processed/                # gitignored
+│   └── external/
 
 ├── notebooks/
 │   ├── 01_eda_sunnybest.ipynb
@@ -250,51 +244,102 @@ retail-sales-forecasting-genai/
 
 ├── src/
 │   ├── __init__.py
+
 │   ├── config/
+│   │   ├── __init__.py
+│   │   ├── settings.py            # NEW: central config loader
+│   │   ├── constraints.yaml       # NEW: business guardrails (max discount, min margin, etc.)
+│   │   └── registry.yaml          # NEW: model + prompt registry pointers
+
 │   ├── data/
-│       ├── __init__.py
-│       ├── make_dataset.py
+│   │   ├── __init__.py
+│   │   └── make_dataset.py
+
 │   ├── features/
-│       ├── __init__.py
-│       ├── build_features.py
+│   │   ├── __init__.py
+│   │   └── build_features.py
+
 │   ├── models/
-│       ├── __init__.py
-│       ├── predict.py
-│       ├── train_forecast.py
-│       ├── train_stock.py
-│   ├── monitoring/
-│       ├── __init__.py
-│       ├── rules.py
-│       ├── store.py
+│   │   ├── __init__.py
+│   │   ├── train_forecast.py
+│   │   ├── train_stock.py
+│   │   ├── predict.py
+│   │   └── registry.py            # NEW: get_model_version(), load_model()
+
 │   ├── pricing/
-│       ├── build_elasticity.py
-│       ├── elasticity.py
-│   ├── dashboards/
-|        ├── streamlit_app.py 
+│   │   ├── __init__.py
+│   │   ├── build_elasticity.py
+│   │   ├── elasticity.py
+│   │   └── optimizer.py           # RENAME from notebook logic (optional)
+
+│   ├── genai/
+│   │   ├── __init__.py
+│   │   ├── copilot.py
+│   │   ├── tools.py
+│   │   ├── rag_index.py
+│   │   ├── rag_qa.py
+│   │   ├── prompts/
+│   │   ├── eval/
+│   │   └── prompt_registry.py     # NEW: prompt versioning utilities
+
+│   ├── agents/                    # ✅ NEW: AGENTIC AI LAYER
+│   │   ├── __init__.py
+│   │   ├── base.py                # Agent interface + shared logic
+│   │   ├── pricing_agent.py       # price recommendations (multi-step)
+│   │   ├── promo_agent.py         # promo decisions (multi-step)
+│   │   ├── inventory_agent.py     # reorder decisions (multi-step)
+│   │   └── policies.py            # guardrails + safe action flows
+
+│   ├── governance/                # ✅ NEW: AUDIT / COMPLIANCE LAYER
+│   │   ├── __init__.py
+│   │   ├── audit_log.py           # write decision logs
+│   │   ├── schemas.py             # log schema definitions
+│   │   ├── fairness.py            # simple bias checks by region/store/category
+│   │   └── explainability.py      # SHAP/permutation importance hooks
+
+│   ├── monitoring/
+│   │   ├── __init__.py
+│   │   ├── store.py               # log writers
+│   │   ├── rules.py               # thresholds & alert rules
+│   │   ├── metrics.py             # NEW: forecast MAE/RMSE, drift metrics
+│   │   └── drift.py               # NEW: PSI/KS drift checks
+
 │   ├── api/
-│       ├── __init__.py
-│       ├── app.py
+│   │   ├── __init__.py
+│   │   ├── app.py
+│   │   └── routes/
+│   │       ├── __init__.py
+│   │       ├── predict.py         # existing predict endpoints
+│   │       ├── agents.py          # NEW: /agent/* endpoints
+│   │       └── monitoring.py      # NEW: /monitoring/* endpoints
+
+│   ├── dashboards/
+│   │   ├── __init__.py
+│   │   └── streamlit_app.py
+
 │   ├── spark/
-│       ├── __init__.py
-│       ├── spark_aggregations.py
-│       ├── spark_etl.py
-│       ├── spark_feature_engineering.py
-│       ├── spark_session.py
-│   ├── warehouse/
+│   │   ├── __init__.py
+│   │   ├── spark_session.py
+│   │   ├── spark_etl.py
+│   │   ├── spark_aggregations.py
+│   │   └── spark_feature_engineering.py
+
+│   └── warehouse/
 │       ├── marts.sql
 │       ├── queries.sql
 │       ├── snowflake_schema.sql
-│       ├── staging_load.sql
-│   └── genai/
-│       ├── copilot.py
-│       ├── tools.py
-│       ├── rag_index.py
-│       ├── rag_qa.py
-│       ├── prompts/
-│       └── eval/
+│       └── staging_load.sql
+
+├── monitoring/             
+│   ├── README.md
+│   ├── predictions_log.csv
+│   ├── agent_decisions.csv
+│   ├── human_overrides.csv
+│   ├── forecast_metrics.csv
+│   └── drift_report.csv
 
 ├── docker/
-│   └── Dockerfile
+│   ├── Dockerfile
 │   └── Dockerfile.streamlit
 
 ├── scripts/
@@ -303,113 +348,22 @@ retail-sales-forecasting-genai/
 ├── infra/
 │   └── terraform/
 
-├── models/
+├── models/                        # saved artifacts (gitignore big files if needed)
 │   ├── xgb_revenue_forecast.pkl
 │   └── stockout_classifier.pkl
 
-├── mlruns/
+├── mlruns/                        # (usually gitignored)
 ├── tests/
+│   ├── test_predict.py            # NEW: basic endpoint test
+│   ├── test_agents.py             # NEW: agent decisions sanity tests
+│   ├── test_data_schema.py        # NEW: schema validation
+│   └── test_monitoring.py         # NEW: logging writes correctly
 └── assets/
     ├── architecture.png
-│   └── screenshots/
-│       ├── streamlit_overview.png
-│       ├── streamlit_predict.png
-│       ├── streamlit_docs.png
-```
-
-### Version 2 (With GenAI Agents)
-
-```text
-retail-sales-forecasting-genai/
-├── README.md
-├── pyproject.toml
-├── setup.cfg
-├── requirements.txt
-├── .gitignore
-
-├── scripts/                        # ⭐ NEW: runnable entry points
-│   ├── train_forecast.sh
-│   ├── train_stockout.sh
-│   ├── build_rag_index.sh
-│   ├── run_api.sh
-│   └── run_dashboard.sh
-
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── external/
-
-├── notebooks/
-│   ├── 01_eda.ipynb
-│   ├── 02_baseline_forecast.ipynb
-│   ├── 03_ml_forecast_xgboost.ipynb
-│   ├── 04_stockout_classification.ipynb
-│   ├── 05_promo_uplift_causal.ipynb
-│   ├── 06_genai_rag_experiments.ipynb
-│   ├── 07_price_elasticity.ipynb
-│   ├── 08_pricing_optimization.ipynb
-│   └── 09_spark_data_processing.ipynb
-
-├── src/
-│   ├── cli.py                     # ⭐ NEW: unified command interface
-│   │
-│   ├── config/
-│   │   ├── dev.yaml               # ⭐ NEW
-│   │   ├── prod.yaml              # ⭐ NEW
-│   │   └── model_params.yaml      # ⭐ NEW
-│   │
-│   ├── data/
-│   ├── features/
-│   ├── models/
-│   ├── pricing/
-│   ├── dashboards/
-│   ├── api/
-│   ├── spark/
-│   ├── warehouse/
-│   │
-│   └── genai/
-│       ├── copilot.py
-│       ├── tools.py
-│       ├── rag_index.py
-│       ├── rag_qa.py
-│       │
-│       ├── agent/                 # ⭐ NEW: explicit agent layer
-│       │   ├── agent.py
-│       │   ├── tools.py
-│       │   ├── memory.py
-│       │   └── policies.py
-│       │
-│       ├── prompts/
-│       │   ├── system.md
-│       │   ├── forecast_explain.md
-│       │   └── pricing_explain.md
-│       │
-│       └── eval/
-│           ├── eval_set.jsonl
-│           └── run_eval.py
-
-├── docker/
-│   └── Dockerfile
-
-├── infra/
-│   └── terraform/
-
-├── models/
-│   ├── xgb_revenue_forecast.pkl
-│   └── stockout_classifier.pkl
-
-├── mlruns/
-
-├── tests/
-│   ├── test_make_dataset.py
-│   ├── test_features.py
-│   ├── test_api_health.py
-│   └── test_genai_copilot.py
-
-└── assets/
-    ├── architecture.png
-    ├── demo_flow.png
     └── screenshots/
+        ├── streamlit_overview.png
+        ├── streamlit_predict.png
+        └── streamlit_docs.png
 
 
 ```
