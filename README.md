@@ -224,7 +224,7 @@ retail-sales-forecasting-genai/
 ├── setup.cfg
 ├── requirements.txt
 ├── .gitignore
-├── Makefile                      # NEW: one-command workflows (train/test/lint/run)
+├── Makefile                      # one-command workflows (train/test/lint/run)
 
 ├── data/
 │   ├── raw/
@@ -247,9 +247,9 @@ retail-sales-forecasting-genai/
 
 │   ├── config/
 │   │   ├── __init__.py
-│   │   ├── settings.py            # NEW: central config loader
-│   │   ├── constraints.yaml       # NEW: business guardrails (max discount, min margin, etc.)
-│   │   └── registry.yaml          # NEW: model + prompt registry pointers
+│   │   ├── settings.py            # central config loader
+│   │   ├── constraints.yaml       # business guardrails (max discount, min margin, etc.)
+│   │   └── registry.yaml          # model + prompt registry pointers
 
 │   ├── data/
 │   │   ├── __init__.py
@@ -264,13 +264,13 @@ retail-sales-forecasting-genai/
 │   │   ├── train_forecast.py
 │   │   ├── train_stock.py
 │   │   ├── predict.py
-│   │   └── registry.py            # NEW: get_model_version(), load_model()
+│   │   └── registry.py            # get_model_version(), load_model()
 
 │   ├── pricing/
 │   │   ├── __init__.py
 │   │   ├── build_elasticity.py
 │   │   ├── elasticity.py
-│   │   └── optimizer.py           # RENAME from notebook logic (optional)
+│   │   └── optimizer.py           
 
 │   ├── genai/
 │   │   ├── __init__.py
@@ -280,9 +280,9 @@ retail-sales-forecasting-genai/
 │   │   ├── rag_qa.py
 │   │   ├── prompts/
 │   │   ├── eval/
-│   │   └── prompt_registry.py     # NEW: prompt versioning utilities
+│   │   └── prompt_registry.py     # prompt versioning utilities
 
-│   ├── agents/                    # ✅ NEW: AGENTIC AI LAYER
+│   ├── agents/                    # AGENTIC AI LAYER
 │   │   ├── __init__.py
 │   │   ├── base.py                # Agent interface + shared logic
 │   │   ├── pricing_agent.py       # price recommendations (multi-step)
@@ -290,7 +290,7 @@ retail-sales-forecasting-genai/
 │   │   ├── inventory_agent.py     # reorder decisions (multi-step)
 │   │   └── policies.py            # guardrails + safe action flows
 
-│   ├── governance/                # ✅ NEW: AUDIT / COMPLIANCE LAYER
+│   ├── governance/                # AUDIT / COMPLIANCE LAYER
 │   │   ├── __init__.py
 │   │   ├── audit_log.py           # write decision logs
 │   │   ├── schemas.py             # log schema definitions
@@ -352,12 +352,12 @@ retail-sales-forecasting-genai/
 │   ├── xgb_revenue_forecast.pkl
 │   └── stockout_classifier.pkl
 
-├── mlruns/                        # (usually gitignored)
+├── mlruns/                        # (gitignored)
 ├── tests/
-│   ├── test_predict.py            # NEW: basic endpoint test
-│   ├── test_agents.py             # NEW: agent decisions sanity tests
-│   ├── test_data_schema.py        # NEW: schema validation
-│   └── test_monitoring.py         # NEW: logging writes correctly
+│   ├── test_predict.py            # basic endpoint test
+│   ├── test_agents.py             # agent decisions sanity tests
+│   ├── test_data_schema.py        # schema validation
+│   └── test_monitoring.py         # logging writes correctly
 └── assets/
     ├── architecture.png
     └── screenshots/
@@ -367,16 +367,6 @@ retail-sales-forecasting-genai/
 
 
 ```
-
-### GenAI Agent (Planned Extension)
-
-The `genai/agent/` module is intentionally included as a placeholder for future
-work exploring autonomous and semi-autonomous AI agents (tool use, memory,
-and policy control).
-
-At the current stage of the project, GenAI is used primarily as an
-**explanation and decision-support layer** (RAG + model explanations),
-while agent-based orchestration is planned as a future enhancement.
 
 ## Optional Scaling Layer: Spark + Warehouse (Snowflake)
 
