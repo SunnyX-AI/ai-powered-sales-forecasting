@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 import pandas as pd
 
 
-LOG_PATH = os.getenv("PREDICTIONS_LOG_PATH", "data/processed/monitoring/predictions_log.csv")
+LOG_PATH = os.getenv("PREDICTIONS_LOG_PATH", "monitoring/predictions_log.csv")
 
 
 def _ensure_parent_dir(path: str) -> None:
