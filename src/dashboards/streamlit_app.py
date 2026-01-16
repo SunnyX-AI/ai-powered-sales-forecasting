@@ -50,13 +50,15 @@ except Exception as e:
 # -----------------------------
 # Tabs
 # -----------------------------
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "Overview",
     "Predict (Revenue + Stockout)",
     "Predict Example (From Data)",
     "GenAI Ask (Copilot)",
     "Pricing Elasticity",
-    "Monitoring (Confidence + Alerts)"
+    "Monitoring (Confidence + Alerts)",
+    "Pricing Agent (Recommendations)",
+    "Inventory Agent (Reorder Decisions)" 
 ])
 
 
@@ -134,10 +136,12 @@ with tab2:
             res = api_post("/predict", payload)
             if res.status_code == 200:
                 out = res.json()
-                m1, m2 = st.columns(2)
+                m1, m2, m3 = st.columns(3)
                 m1.metric("Predicted Revenue (₦)", f"{out['predicted_revenue']:,.2f}")
                 m2.metric("Stockout Probability", f"{out['stockout_probability']:.3f}")
+                m3.metric("Stockout Risk Band", out.get("stockout_risk_band", "N/A"))
                 st.success("Prediction successful ✅")
+            
             else:
                 st.error(f"API error {res.status_code}: {res.text}")
         except Exception as e:
@@ -294,3 +298,227 @@ with tab6:
             st.error("Failed to load alerts")
             st.exception(e)
 
+# -----------------------------
+# TAB 7: Pricing Agents
+# -----------------------------
+with tab7:
+    st.subheader("🤖 Pricing Agent (Action Recommendations)")
+    st.caption("Calls: `POST /agent/pricing/recommend`")
+
+    st.info(
+        "This tab is your first real 'agent' UI: it takes business context + guardrails and returns a "
+        "recommended pricing action."
+    )
+
+    # --- Inputs ---
+    with st.form("pricing_agent_form"):
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            category = st.text_input("Category", value="Mobile Phones")
+            store_size = st.selectbox("Store Size", ["Small", "Medium", "Large"], index=2)
+            month = st.slider("Month", 1, 12, 12)
+
+        with c2:
+            current_price = st.number_input("Current Price (₦)", min_value=0.0, value=250000.0, step=1000.0)
+            regular_price = st.number_input("Regular Price (₦)", min_value=0.0, value=300000.0, step=1000.0)
+            discount_pct = st.number_input("Discount %", min_value=0.0, max_value=100.0, value=15.0, step=1.0)
+
+        with c3:
+            promo_flag = st.selectbox("Promo Flag", [0, 1], index=1)
+            starting_inventory = st.number_input("Starting Inventory", min_value=0, value=12, step=1)
+
+            # guardrails / constraints
+            max_discount = st.slider("Max Discount Guardrail (%)", 0, 80, 30, step=5)
+            min_margin_pct = st.slider("Min Margin Guardrail (%)", 0, 80, 15, step=5)
+            max_stockout_probability = st.slider("Max Stockout Probability", 0.0, 1.0, 0.60, step=0.05)
+
+        agent_submitted = st.form_submit_button("Run Pricing Agent")
+
+    if agent_submitted:
+        # ✅ Request shape MUST match PricingAgentRequest in routes/agents.py
+        req = {
+            "payload": {
+                # must match /predict payload keys your model expects
+                "price": float(current_price),
+                "regular_price": float(regular_price),
+                "discount_pct": float(discount_pct),
+                "promo_flag": int(promo_flag),
+                "month": int(month),
+
+                # defaults for now (add inputs later if you want)
+                "is_weekend": 0,
+                "is_holiday": 0,
+                "is_payday": 0,
+
+                "category": category,
+                "store_size": store_size,
+
+                "temperature_c": 29.5,
+                "rainfall_mm": 2.0,
+
+                "starting_inventory": int(starting_inventory),
+            },
+            "objective": "revenue",
+
+            # constraints expected by API schema
+            "max_discount_pct": float(max_discount),
+            "max_stockout_probability": float(max_stockout_probability),
+            "min_margin_pct": float(min_margin_pct),
+            "min_price_factor": 0.70,
+            "max_price_factor": 1.30,
+            "n_grid": 25,
+        }
+
+        st.code(req, language="json")
+
+        try:
+            # ✅ correct endpoint
+            res = api_post("/agent/pricing/recommend", req)
+
+            if res.status_code != 200:
+                st.error(f"Agent API error {res.status_code}: {res.text}")
+            else:
+                out = res.json()
+                st.success("Pricing Agent recommendation returned ✅")
+
+                # ✅ correct response parsing (your agent returns recommendation inside "recommendation")
+                rec = out.get("recommendation", {})
+
+                rec_price = rec.get("recommended_price")
+                rec_disc = rec.get("recommended_discount_pct")
+                pred_rev = rec.get("predicted_revenue")
+                stock_prob = rec.get("stockout_probability")
+
+                m1, m2, m3 = st.columns(3)
+                m1.metric("Recommended Price (₦)", f"{float(rec_price):,.0f}" if rec_price is not None else "N/A")
+                m2.metric("Recommended Discount (%)", f"{float(rec_disc):.1f}" if rec_disc is not None else "N/A")
+                m3.metric("Stockout Probability", f"{float(stock_prob):.3f}" if stock_prob is not None else "N/A")
+
+                if pred_rev is not None:
+                    st.metric("Predicted Revenue (₦)", f"{float(pred_rev):,.2f}")
+
+                st.write("### Why")
+                why = out.get("why", [])
+                if why:
+                    for w in why:
+                        st.write(f"- {w}")
+                else:
+                    st.write("No explanation returned yet.")
+
+                st.write("### Top Candidates (debug)")
+                top = out.get("top_candidates", [])
+                if top:
+                    st.dataframe(pd.DataFrame(top), use_container_width=True)
+
+                st.write("### Full Response")
+                st.json(out)
+
+        except Exception as e:
+            st.error("Failed to call Pricing Agent endpoint")
+            st.exception(e)
+
+
+# -----------------------------
+# TAB 8: Inventory Agent
+# -----------------------------
+with tab8:
+    st.subheader("📦 Inventory Agent (Reorder Decisions)")
+    st.caption("Calls: `POST /agent/inventory/recommend`")
+
+    st.info(
+        "This agent recommends whether to reorder now, and how much, based on forecast/stockout risk + constraints."
+    )
+
+    with st.form("inventory_agent_form"):
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            inv_category = st.text_input("Category", value="Mobile Phones", key="inv_category")
+            inv_store_size = st.selectbox("Store Size", ["Small", "Medium", "Large"], index=2, key="inv_store_size")
+            inv_month = st.slider("Month", 1, 12, 12, key="inv_month")
+
+        with c2:
+            inv_price = st.number_input("Price (₦)", min_value=0.0, value=250000.0, step=1000.0, key="inv_price")
+            inv_regular_price = st.number_input("Regular Price (₦)", min_value=0.0, value=300000.0, step=1000.0, key="inv_regular_price")
+            inv_discount_pct = st.number_input("Discount %", min_value=0.0, max_value=100.0, value=15.0, step=1.0, key="inv_discount_pct")
+
+        with c3:
+            inv_promo_flag = st.selectbox("Promo Flag", [0, 1], index=1, key="inv_promo_flag")
+            inv_starting_inventory = st.number_input("Starting Inventory", min_value=0, value=12, step=1, key="inv_starting_inventory")
+
+            inv_lead_time_days = st.slider("Lead Time (days)", 1, 30, 7, key="inv_lead_time_days")
+            inv_review_period_days = st.slider("Review Period (days)", 1, 30, 7, key="inv_review_period_days")
+            inv_safety_stock_units = st.slider("Safety Stock (units)", 0, 100, 5, key="inv_safety_stock_units")
+            inv_max_stockout_probability = st.slider("Max Allowed Stockout Prob", 0.0, 1.0, 0.60, step=0.05, key="inv_max_stockout_probability")
+
+        run_inv = st.form_submit_button("Run Inventory Agent")
+
+    if run_inv:
+        req = {
+            "payload": {
+                "price": float(inv_price),
+                "regular_price": float(inv_regular_price),
+                "discount_pct": float(inv_discount_pct),
+                "promo_flag": int(inv_promo_flag),
+                "month": int(inv_month),
+
+                # defaults for now (same as pricing tab)
+                "is_weekend": 0,
+                "is_holiday": 0,
+                "is_payday": 0,
+
+                "category": inv_category,
+                "store_size": inv_store_size,
+
+                "temperature_c": 29.5,
+                "rainfall_mm": 2.0,
+
+                "starting_inventory": int(inv_starting_inventory),
+            },
+            "lead_time_days": int(inv_lead_time_days),
+            "review_period_days": int(inv_review_period_days),
+            "safety_stock_units": int(inv_safety_stock_units),
+            "max_stockout_probability": float(inv_max_stockout_probability),
+        }
+
+        st.code(req, language="json")
+
+        try:
+            res = api_post("/agent/inventory/recommend", req)
+            if res.status_code != 200:
+                st.error(f"Agent API error {res.status_code}: {res.text}")
+            else:
+                out = res.json()
+                st.success("Inventory Agent recommendation returned ✅")
+
+                rec = out.get("recommendation", out)
+
+                reorder_now = rec.get("reorder_now")
+                reorder_qty = rec.get("reorder_qty") or rec.get("recommended_order_qty")
+                risk = rec.get("risk_band") or rec.get("stockout_risk_band")
+                stock_prob = rec.get("stockout_probability")
+
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Reorder Now?", str(reorder_now) if reorder_now is not None else "N/A")
+                m2.metric("Reorder Qty", f"{int(reorder_qty)}" if reorder_qty is not None else "N/A")
+                m3.metric("Risk Band", risk or "N/A")
+                m4.metric("Stockout Prob", f"{float(stock_prob):.3f}" if stock_prob is not None else "N/A")
+
+                st.write("### Why")
+                why = out.get("why", [])
+                if isinstance(why, list) and why:
+                    for w in why:
+                        st.write(f"- {w}")
+                elif isinstance(why, str) and why:
+                    st.write(why)
+                else:
+                    st.write("No explanation returned yet (add `why` in inventory_agent.py).")
+
+                st.write("### Full Response")
+                st.json(out)
+
+        except Exception as e:
+            st.error("Failed to call Inventory Agent endpoint")
+            st.exception(e)
+            
