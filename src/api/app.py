@@ -27,16 +27,11 @@ from src.genai.copilot import run_copilot
 from src.api.routes.agents import router as agents_router
 
 
-
-
-
 app = FastAPI(
     title="AI-Powered Retail Decision Intelligence Platform",
     version="1.0.0",
     description="Forecast revenue and predict stockout risk. Built from the SunnyBest project pipeline."
 )
-
-
 app.include_router(agents_router)
 # -----------------------------
 # Load artifacts at startup
@@ -111,15 +106,19 @@ def health() -> Dict[str, Any]:
 
 
 # Pricing Intelligence
-@app.get("/pricing/elasticity")
+@app.get("/pricing/elasticity", tags=["pricing"])
 def get_elasticity(category: Optional[str] = None):
     """
     GET /pricing/elasticity
     GET /pricing/elasticity?category=Mobile%20Phones
     """
-    df = ELASTICITY_TABLE.copy()
+    df = load_elasticity_table()  # reload each call
+
     if df.empty:
-        return {"items": [], "note": "Elasticity table not found. Build artifact first."}
+        return {
+            "items": [],
+            "note": "Elasticity table not found. Build artifact first."
+        }
 
     if category:
         df = df[df["category"] == category]
@@ -168,13 +167,13 @@ def predict_example(
     return predict_example_from_existing_data(date=date, store_id=store_id, product_id=product_id)
 
 
-@app.post("/ask")
+@app.post("/ask", tags=["genai"])
 def ask(req: AskRequest):
     payload = req.payload or {}
     return run_copilot(req.query, payload, DOCS)
 
 
-@app.get("/monitoring/recent")
+@app.get("/monitoring/recent",tags=["monitoring"])
 def monitoring_recent(limit: int = 50) -> Dict[str, Any]:
     df = read_recent_predictions(limit=limit)
     if df.empty:

@@ -50,7 +50,10 @@ except Exception as e:
 # -----------------------------
 # Tabs
 # -----------------------------
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+# =============================
+# 1) Update Tabs (add tab9)
+# =============================
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
     "Overview",
     "Predict (Revenue + Stockout)",
     "Predict Example (From Data)",
@@ -58,7 +61,8 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "Pricing Elasticity",
     "Monitoring (Confidence + Alerts)",
     "Pricing Agent (Recommendations)",
-    "Inventory Agent (Reorder Decisions)" 
+    "Inventory Agent (Reorder Decisions)",
+    "Decision Summary (One-Click)"
 ])
 
 
@@ -521,4 +525,175 @@ with tab8:
         except Exception as e:
             st.error("Failed to call Inventory Agent endpoint")
             st.exception(e)
-            
+
+
+# =============================
+# TAB 9: DECISION SUMMARY
+# =============================
+with tab9:
+    st.subheader("🧠 Decision Summary (One-Click)")
+    st.caption("Calls: `POST /predict`, `POST /agent/pricing/recommend`, `POST /agent/inventory/recommend`")
+
+    st.info(
+        "This tab runs ONE scenario and returns a full decision pack: "
+        "Forecast + Stockout Risk + Pricing recommendation + Inventory reorder recommendation."
+    )
+
+    with st.form("decision_summary_form"):
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            ds_category = st.text_input("Category", value="Mobile Phones", key="ds_category")
+            ds_store_size = st.selectbox("Store Size", ["Small", "Medium", "Large"], index=2, key="ds_store_size")
+            ds_month = st.slider("Month", 1, 12, 12, key="ds_month")
+
+        with c2:
+            ds_price = st.number_input("Price (₦)", min_value=0.0, value=250000.0, step=1000.0, key="ds_price")
+            ds_regular_price = st.number_input("Regular Price (₦)", min_value=0.0, value=300000.0, step=1000.0, key="ds_regular_price")
+            ds_discount_pct = st.number_input("Discount %", min_value=0.0, max_value=100.0, value=15.0, step=1.0, key="ds_discount_pct")
+
+        with c3:
+            ds_promo_flag = st.selectbox("Promo Flag", [0, 1], index=1, key="ds_promo_flag")
+            ds_starting_inventory = st.number_input("Starting Inventory", min_value=0, value=12, step=1, key="ds_starting_inventory")
+
+        st.divider()
+        st.write("### Guardrails (constraints)")
+
+        g1, g2, g3 = st.columns(3)
+        with g1:
+            ds_max_discount = st.slider("Max Discount (%)", 0, 80, 30, step=5, key="ds_max_discount")
+            ds_min_margin_pct = st.slider("Min Margin (%)", 0, 80, 15, step=5, key="ds_min_margin_pct")
+        with g2:
+            ds_max_stockout_probability = st.slider("Max Stockout Probability", 0.0, 1.0, 0.60, step=0.05, key="ds_max_stockout_probability")
+            ds_objective = st.selectbox("Pricing Objective", ["revenue", "profit"], index=0, key="ds_objective")
+        with g3:
+            ds_lead_time_days = st.slider("Lead Time (days)", 1, 30, 7, key="ds_lead_time_days")
+            ds_review_period_days = st.slider("Review Period (days)", 1, 30, 7, key="ds_review_period_days")
+            ds_safety_stock_units = st.slider("Safety Stock (units)", 0, 100, 5, key="ds_safety_stock_units")
+
+        run_ds = st.form_submit_button("Run Decision Summary")
+
+    if run_ds:
+        # Base payload that your models expect (same pattern as tab7/tab8)
+        base_payload = {
+            "price": float(ds_price),
+            "regular_price": float(ds_regular_price),
+            "discount_pct": float(ds_discount_pct),
+            "promo_flag": int(ds_promo_flag),
+            "month": int(ds_month),
+
+            "is_weekend": 0,
+            "is_holiday": 0,
+            "is_payday": 0,
+
+            "category": ds_category,
+            "store_size": ds_store_size,
+
+            "temperature_c": 29.5,
+            "rainfall_mm": 2.0,
+
+            "starting_inventory": int(ds_starting_inventory),
+        }
+
+        pricing_req = {
+            "payload": base_payload,
+            "objective": ds_objective,
+            "max_discount_pct": float(ds_max_discount),
+            "max_stockout_probability": float(ds_max_stockout_probability),
+            "min_margin_pct": float(ds_min_margin_pct),
+            "min_price_factor": 0.70,
+            "max_price_factor": 1.30,
+            "n_grid": 25,
+        }
+
+        inventory_req = {
+            "payload": base_payload,
+            "lead_time_days": int(ds_lead_time_days),
+            "review_period_days": int(ds_review_period_days),
+            "safety_stock_units": int(ds_safety_stock_units),
+            "max_stockout_probability": float(ds_max_stockout_probability),
+        }
+
+        st.write("### Requests (debug)")
+        st.code({"predict_payload": base_payload, "pricing_req": pricing_req, "inventory_req": inventory_req}, language="json")
+
+        try:
+            # 1) Predict
+            pred_res = api_post("/predict", base_payload)
+            pred_res.raise_for_status()
+            pred_out = pred_res.json()
+
+            # 2) Pricing Agent
+            price_res = api_post("/agent/pricing/recommend", pricing_req)
+            price_res.raise_for_status()
+            price_out = price_res.json()
+
+            # 3) Inventory Agent
+            inv_res = api_post("/agent/inventory/recommend", inventory_req)
+            inv_res.raise_for_status()
+            inv_out = inv_res.json()
+
+            st.success("Decision Summary generated ✅")
+
+            # ----- Extract results safely -----
+            predicted_revenue = pred_out.get("predicted_revenue")
+            stockout_probability = pred_out.get("stockout_probability")
+            stockout_risk_band = pred_out.get("stockout_risk_band")
+
+            pricing_rec = price_out.get("recommendation", {})
+            rec_price = pricing_rec.get("recommended_price")
+            rec_disc = pricing_rec.get("recommended_discount_pct")
+            pricing_why = price_out.get("why", [])
+
+            inv_rec = inv_out.get("recommendation", inv_out)
+            reorder_now = inv_rec.get("reorder_now")
+            reorder_qty = inv_rec.get("reorder_qty") or inv_rec.get("recommended_order_qty")
+            inv_why = inv_out.get("why", inv_rec.get("why", []))
+
+            # ----- Executive metrics -----
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Predicted Revenue (₦)", f"{float(predicted_revenue):,.2f}" if predicted_revenue is not None else "N/A")
+            m2.metric("Stockout Probability", f"{float(stockout_probability):.3f}" if stockout_probability is not None else "N/A")
+            m3.metric("Risk Band", stockout_risk_band or "N/A")
+            m4.metric("Reorder Now?", str(reorder_now) if reorder_now is not None else "N/A")
+
+            st.divider()
+
+            cA, cB = st.columns(2)
+            with cA:
+                st.write("## 💰 Pricing Decision")
+                st.metric("Recommended Price (₦)", f"{float(rec_price):,.0f}" if rec_price is not None else "N/A")
+                st.metric("Recommended Discount (%)", f"{float(rec_disc):.1f}" if rec_disc is not None else "N/A")
+
+                st.write("### Why (Pricing)")
+                if isinstance(pricing_why, list) and pricing_why:
+                    for w in pricing_why:
+                        st.write(f"- {w}")
+                elif isinstance(pricing_why, str) and pricing_why:
+                    st.write(pricing_why)
+                else:
+                    st.write("No explanation returned yet.")
+
+            with cB:
+                st.write("## 📦 Inventory Decision")
+                st.metric("Recommended Reorder Qty", f"{int(reorder_qty)}" if reorder_qty is not None else "N/A")
+
+                st.write("### Why (Inventory)")
+                if isinstance(inv_why, list) and inv_why:
+                    for w in inv_why:
+                        st.write(f"- {w}")
+                elif isinstance(inv_why, str) and inv_why:
+                    st.write(inv_why)
+                else:
+                    st.write("No explanation returned yet.")
+
+            st.divider()
+            st.write("### Full Responses (debug)")
+            st.json({"predict": pred_out, "pricing_agent": price_out, "inventory_agent": inv_out})
+
+        except requests.exceptions.HTTPError as e:
+            st.error("One of the API calls failed (HTTP error).")
+            st.exception(e)
+        except Exception as e:
+            st.error("Failed to generate Decision Summary.")
+            st.exception(e)
