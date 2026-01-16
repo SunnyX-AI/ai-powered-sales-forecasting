@@ -53,7 +53,7 @@ except Exception as e:
 # =============================
 # 1) Update Tabs (add tab9)
 # =============================
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs([
     "Overview",
     "Predict (Revenue + Stockout)",
     "Predict Example (From Data)",
@@ -62,7 +62,8 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
     "Monitoring (Confidence + Alerts)",
     "Pricing Agent (Recommendations)",
     "Inventory Agent (Reorder Decisions)",
-    "Decision Summary (One-Click)"
+    "Decision Summary (One-Click)",
+    "Decision Plan (Pricing + Inventory)"
 ])
 
 
@@ -696,4 +697,124 @@ with tab9:
             st.exception(e)
         except Exception as e:
             st.error("Failed to generate Decision Summary.")
+            st.exception(e)
+
+
+# -----------------------------
+# TAB 10: Decision Plan (Orchestrator)
+# -----------------------------
+with tab10:
+    st.subheader("🧠 Decision Plan (Pricing + Inventory)")
+    st.caption("Calls: `POST /decision/plan`")
+
+    st.info(
+        "This is the orchestrator. It combines Pricing + Inventory agents into one actionable plan."
+    )
+
+    with st.form("decision_plan_form"):
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            d_category = st.text_input("Category", value="Mobile Phones", key="d_category")
+            d_store_size = st.selectbox("Store Size", ["Small", "Medium", "Large"], index=2, key="d_store_size")
+            d_month = st.slider("Month", 1, 12, 12, key="d_month")
+
+        with c2:
+            d_price = st.number_input("Price (₦)", min_value=0.0, value=250000.0, step=1000.0, key="d_price")
+            d_regular_price = st.number_input("Regular Price (₦)", min_value=0.0, value=300000.0, step=1000.0, key="d_regular_price")
+            d_discount_pct = st.number_input("Discount %", min_value=0.0, max_value=100.0, value=15.0, step=1.0, key="d_discount_pct")
+
+        with c3:
+            d_promo_flag = st.selectbox("Promo Flag", [0, 1], index=1, key="d_promo_flag")
+            d_starting_inventory = st.number_input("Starting Inventory", min_value=0, value=12, step=1, key="d_starting_inventory")
+
+        st.markdown("### Guardrails / Constraints")
+        gc1, gc2, gc3 = st.columns(3)
+
+        with gc1:
+            pricing_objective = st.selectbox("Pricing Objective", ["revenue", "profit"], index=0, key="d_obj")
+            max_discount_pct = st.slider("Max Discount (%)", 0, 80, 30, step=5, key="d_max_disc")
+            max_stockout_pricing = st.slider("Max Stockout Prob (Pricing)", 0.0, 1.0, 0.60, step=0.05, key="d_max_stock_pr")
+
+        with gc2:
+            max_stockout_inventory = st.slider("Reorder Trigger Prob (Inventory)", 0.0, 1.0, 0.40, step=0.05, key="d_max_stock_inv")
+            safety_stock_units = st.slider("Safety Stock (units)", 0, 100, 5, key="d_safety")
+            max_reorder_units = st.slider("Max Reorder Units", 0, 2000, 500, step=50, key="d_max_reorder")
+
+        with gc3:
+            min_price_factor = st.slider("Min Price Factor", 0.10, 1.00, 0.70, step=0.05, key="d_min_pf")
+            max_price_factor = st.slider("Max Price Factor", 1.00, 2.00, 1.30, step=0.05, key="d_max_pf")
+            n_grid = st.slider("Price Search Grid (n)", 5, 60, 25, step=5, key="d_grid")
+
+        run_plan = st.form_submit_button("Run Decision Plan")
+
+    if run_plan:
+        req = {
+            "payload": {
+                "price": float(d_price),
+                "regular_price": float(d_regular_price),
+                "discount_pct": float(d_discount_pct),
+                "promo_flag": int(d_promo_flag),
+                "month": int(d_month),
+
+                # defaults (same trick as your other tabs)
+                "is_weekend": 0,
+                "is_holiday": 0,
+                "is_payday": 0,
+
+                "category": d_category,
+                "store_size": d_store_size,
+                "temperature_c": 29.5,
+                "rainfall_mm": 2.0,
+                "starting_inventory": int(d_starting_inventory),
+            },
+
+            # pricing
+            "pricing_objective": pricing_objective,
+            "max_discount_pct": float(max_discount_pct),
+            "max_stockout_probability_pricing": float(max_stockout_pricing),
+            "min_margin_pct": None,
+            "min_price_factor": float(min_price_factor),
+            "max_price_factor": float(max_price_factor),
+            "n_grid": int(n_grid),
+
+            # inventory
+            "max_stockout_probability_inventory": float(max_stockout_inventory),
+            "safety_stock_units": int(safety_stock_units),
+            "max_reorder_units": int(max_reorder_units),
+        }
+
+        st.code(req, language="json")
+
+        try:
+            res = api_post("/decision/plan", req)
+            if res.status_code != 200:
+                st.error(f"Decision API error {res.status_code}: {res.text}")
+            else:
+                out = res.json()
+                st.success("Decision Plan returned ✅")
+
+                plan = out.get("plan", {})
+                pricing_action = plan.get("pricing_action") or {}
+                inventory_action = plan.get("inventory_action") or {}
+
+                st.write("## ✅ Action Plan Summary")
+                cA, cB, cC, cD = st.columns(4)
+
+                cA.metric("Recommended Price", f"{pricing_action.get('recommended_price', 'N/A')}")
+                cB.metric("Recommended Discount %", f"{pricing_action.get('recommended_discount_pct', 'N/A')}")
+                cC.metric("Reorder Now?", str(inventory_action.get("trigger_reorder", "N/A")))
+                cD.metric("Reorder Units", str(inventory_action.get("recommended_reorder_units", "N/A")))
+
+                notes = plan.get("notes", [])
+                if notes:
+                    st.warning("### Notes")
+                    for n in notes:
+                        st.write(f"- {n}")
+
+                st.write("### Full Response (debug)")
+                st.json(out)
+
+        except Exception as e:
+            st.error("Failed to call /decision/plan")
             st.exception(e)

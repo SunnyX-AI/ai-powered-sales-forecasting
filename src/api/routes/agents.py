@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from src.agents.pricing_agent import PricingConstraints, recommend_price
+from src.agents.inventory_agent import InventoryConstraints, recommend_reorder
 
 
 router = APIRouter(prefix="/agent", tags=["agents"])
@@ -35,3 +36,20 @@ def pricing_recommend(req: PricingAgentRequest):
         n_grid=req.n_grid,
     )
     return recommend_price(req.payload, constraints=c, objective=req.objective, return_table=True)
+class InventoryAgentRequest(BaseModel):
+    payload: Dict[str, Any]
+
+    # constraints (optional overrides)
+    max_stockout_probability: float = 0.40
+    safety_stock_units: int = 5
+    max_reorder_units: int = 500
+
+
+@router.post("/inventory/recommend")
+def inventory_recommend(req: InventoryAgentRequest):
+    c = InventoryConstraints(
+        max_stockout_probability=req.max_stockout_probability,
+        safety_stock_units=req.safety_stock_units,
+        max_reorder_units=req.max_reorder_units,
+    )
+    return recommend_reorder(req.payload, constraints=c)

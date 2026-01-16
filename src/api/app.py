@@ -25,6 +25,7 @@ from src.monitoring.store import append_prediction_log, read_recent_predictions
 from src.monitoring.rules import generate_alerts
 from src.genai.copilot import run_copilot
 from src.api.routes.agents import router as agents_router
+from src.api.routes.decision import router as decision_router
 
 
 app = FastAPI(
@@ -33,6 +34,7 @@ app = FastAPI(
     description="Forecast revenue and predict stockout risk. Built from the SunnyBest project pipeline."
 )
 app.include_router(agents_router)
+app.include_router(decision_router)
 # -----------------------------
 # Load artifacts at startup
 # -----------------------------
