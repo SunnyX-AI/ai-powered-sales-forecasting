@@ -12,6 +12,8 @@ np.random.seed(42)
 # ✅ ADDED: optional scale mode (default is "small")
 # Run large mode like:  SCALE_MODE=large python generate_sunnybest_data.py
 SCALE_MODE = os.getenv("SCALE_MODE", "small").lower()
+print(f"🔧 Running SunnyBest generator in SCALE_MODE={SCALE_MODE}")
+
 
 # ✅ ADDED: keep your defaults for small mode; override only in large mode
 START_DATE = "2021-01-01"
