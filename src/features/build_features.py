@@ -9,6 +9,7 @@ Feature engineering for SunnyBest models.
 """
 
 from __future__ import annotations
+
 from typing import Tuple, List, Optional
 import pandas as pd
 import numpy as np
@@ -71,7 +72,6 @@ def encode_categoricals(X: pd.DataFrame) -> pd.DataFrame:
 # -----------------------------
 # Time-series feature helpers
 # -----------------------------
-
 def add_lag_rolling_features(
     df: pd.DataFrame,
     *,
@@ -99,17 +99,20 @@ def add_lag_rolling_features(
         windows = [7, 28]
 
     out = df.copy()
-    out[date_col] = pd.to_datetime(out[date_col])
+    out[date_col] = pd.to_datetime(out[date_col], errors="coerce")
 
+    # If date parsing created NaTs, keep them but they'll likely be filtered later
     sort_cols = ([*group_cols, date_col] if group_cols else [date_col])
     out = out.sort_values(sort_cols)
 
     if group_cols:
         g = out.groupby(group_cols, sort=False)[target_col]
+
+        # Lag features
         for lag in lags:
             out[f"{target_col}_lag_{lag}"] = g.shift(lag)
 
-        # rolling on shifted series to avoid leakage
+        # Rolling features computed on shifted series to prevent leakage
         shifted = g.shift(1)
         for w in windows:
             out[f"{target_col}_rollmean_{w}"] = (
@@ -119,15 +122,18 @@ def add_lag_rolling_features(
                 shifted.rolling(w).std().reset_index(level=group_cols, drop=True)
             )
     else:
+        # Lag features
         for lag in lags:
             out[f"{target_col}_lag_{lag}"] = out[target_col].shift(lag)
 
+        # Rolling features on shifted series to prevent leakage
         shifted = out[target_col].shift(1)
         for w in windows:
             out[f"{target_col}_rollmean_{w}"] = shifted.rolling(w).mean()
             out[f"{target_col}_rollstd_{w}"] = shifted.rolling(w).std()
 
     return out
+
 
 # -----------------------------
 # Forecasting features
@@ -139,6 +145,7 @@ def build_forecast_features(
 ) -> Tuple[pd.DataFrame, pd.Series]:
     """
     Build features and target for revenue forecasting.
+    Adds lag/rolling features for time dependency.
     """
 
     if target not in df.columns:
@@ -156,24 +163,74 @@ def build_forecast_features(
         group_cols=group_cols,
     )
 
+    # Base static features
     X = select_base_features(df_feat)
 
-    # Include time-series engineered cols if present
-    ts_cols = [c for c in df_feat.columns if c.startswith(f"{target}_lag_") or c.startswith(f"{target}_roll")]
+    # Add time-series engineered cols
+    ts_cols = [
+        c for c in df_feat.columns
+        if c.startswith(f"{target}_lag_") or c.startswith(f"{target}_roll")
+    ]
     if ts_cols:
         X = pd.concat([X, df_feat[ts_cols]], axis=1)
 
     X = encode_categoricals(X)
     y = df_feat[target]
 
-    # Drop rows that don’t have enough history (normal)
+    # Drop rows that don’t have enough history (lags/rolling -> NaNs)
     valid = X.notnull().all(axis=1) & y.notnull()
-    X, y = X.loc[valid].copy(), y.loc[valid].copy()
+    X = X.loc[valid].copy()
+    y = y.loc[valid].copy()
 
     return X, y
+
 
 # -----------------------------
 # Stockout classification features
 # -----------------------------
-def build_stockout_features(...):
-    ...
+def build_stockout_features(
+    df: pd.DataFrame,
+    target: str = "stockout_occurred",
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Build features and target for stockout classification.
+
+    Note:
+    - This is intentionally "static" for now (no lags),
+      because stockout is strongly driven by inventory + promo/price context.
+    - You can later add lagged demand/inventory signals if needed.
+    """
+
+    if target not in df.columns:
+        raise KeyError(f"Target column '{target}' not found in df")
+
+    feature_cols = [
+        "price",
+        "discount_pct",
+        "promo_flag",
+        "starting_inventory",
+        "month",
+        "is_weekend",
+        "is_holiday",
+        "category",
+        "store_size",
+    ]
+
+    existing = [c for c in feature_cols if c in df.columns]
+    if not existing:
+        raise KeyError(
+            "None of the expected stockout feature columns were found in df. "
+            f"Expected one or more of: {feature_cols}"
+        )
+
+    X = df[existing].copy()
+    X = encode_categoricals(X)
+
+    # Make target robust to bool/int/0-1 values
+    y = df[target]
+    if y.dtype == bool:
+        y = y.astype(int)
+    else:
+        y = pd.to_numeric(y, errors="coerce").fillna(0).astype(int)
+
+    return X, y
