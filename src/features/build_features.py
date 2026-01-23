@@ -9,8 +9,7 @@ Feature engineering for SunnyBest models.
 """
 
 from __future__ import annotations
-
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 import pandas as pd
 import numpy as np
 
@@ -70,11 +69,73 @@ def encode_categoricals(X: pd.DataFrame) -> pd.DataFrame:
 
 
 # -----------------------------
+# Time-series feature helpers
+# -----------------------------
+
+def add_lag_rolling_features(
+    df: pd.DataFrame,
+    *,
+    date_col: str = "date",
+    target_col: str = "revenue",
+    group_cols: Optional[List[str]] = None,
+    lags: Optional[List[int]] = None,
+    windows: Optional[List[int]] = None,
+) -> pd.DataFrame:
+    """
+    Adds lag/rolling features for forecasting.
+    Uses shift(1+) so it does NOT leak future values.
+    """
+
+    # Defensive checks
+    if date_col not in df.columns:
+        raise KeyError(f"Expected date column '{date_col}' not found in dataframe")
+
+    if target_col not in df.columns:
+        raise KeyError(f"Expected target column '{target_col}' not found in dataframe")
+
+    if lags is None:
+        lags = [1, 7, 14]
+    if windows is None:
+        windows = [7, 28]
+
+    out = df.copy()
+    out[date_col] = pd.to_datetime(out[date_col])
+
+    sort_cols = ([*group_cols, date_col] if group_cols else [date_col])
+    out = out.sort_values(sort_cols)
+
+    if group_cols:
+        g = out.groupby(group_cols, sort=False)[target_col]
+        for lag in lags:
+            out[f"{target_col}_lag_{lag}"] = g.shift(lag)
+
+        # rolling on shifted series to avoid leakage
+        shifted = g.shift(1)
+        for w in windows:
+            out[f"{target_col}_rollmean_{w}"] = (
+                shifted.rolling(w).mean().reset_index(level=group_cols, drop=True)
+            )
+            out[f"{target_col}_rollstd_{w}"] = (
+                shifted.rolling(w).std().reset_index(level=group_cols, drop=True)
+            )
+    else:
+        for lag in lags:
+            out[f"{target_col}_lag_{lag}"] = out[target_col].shift(lag)
+
+        shifted = out[target_col].shift(1)
+        for w in windows:
+            out[f"{target_col}_rollmean_{w}"] = shifted.rolling(w).mean()
+            out[f"{target_col}_rollstd_{w}"] = shifted.rolling(w).std()
+
+    return out
+
+# -----------------------------
 # Forecasting features
 # -----------------------------
 def build_forecast_features(
     df: pd.DataFrame,
-    target: str = "revenue"
+    target: str = "revenue",
+    date_col: str = "date",
 ) -> Tuple[pd.DataFrame, pd.Series]:
     """
     Build features and target for revenue forecasting.
@@ -83,44 +144,36 @@ def build_forecast_features(
     if target not in df.columns:
         raise KeyError(f"Target column '{target}' not found in df")
 
-    X = select_base_features(df)
-    X = encode_categoricals(X)
+    # If you have store_id/product_id in your merged df, use them here.
+    # If you don't, the function will still work globally (less accurate).
+    group_cols = [c for c in ["store_id", "product_id"] if c in df.columns]
+    group_cols = group_cols if group_cols else None
 
-    y = df[target]
+    df_feat = add_lag_rolling_features(
+        df,
+        date_col=date_col,
+        target_col=target,
+        group_cols=group_cols,
+    )
+
+    X = select_base_features(df_feat)
+
+    # Include time-series engineered cols if present
+    ts_cols = [c for c in df_feat.columns if c.startswith(f"{target}_lag_") or c.startswith(f"{target}_roll")]
+    if ts_cols:
+        X = pd.concat([X, df_feat[ts_cols]], axis=1)
+
+    X = encode_categoricals(X)
+    y = df_feat[target]
+
+    # Drop rows that don’t have enough history (normal)
+    valid = X.notnull().all(axis=1) & y.notnull()
+    X, y = X.loc[valid].copy(), y.loc[valid].copy()
 
     return X, y
-
 
 # -----------------------------
 # Stockout classification features
 # -----------------------------
-def build_stockout_features(
-    df: pd.DataFrame,
-    target: str = "stockout_occurred"
-) -> Tuple[pd.DataFrame, pd.Series]:
-    """
-    Build features and target for stockout classification.
-    """
-
-    if target not in df.columns:
-        raise KeyError(f"Target column '{target}' not found in df")
-
-    feature_cols = [
-        "price",
-        "discount_pct",
-        "promo_flag",
-        "starting_inventory",
-        "month",
-        "is_weekend",
-        "is_holiday",
-        "category",
-        "store_size",
-    ]
-
-    existing = [c for c in feature_cols if c in df.columns]
-    X = df[existing].copy()
-    X = encode_categoricals(X)
-
-    y = df[target].astype(int)
-
-    return X, y
+def build_stockout_features(...):
+    ...
