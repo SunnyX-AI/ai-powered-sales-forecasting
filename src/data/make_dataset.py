@@ -71,6 +71,17 @@ def _normalise_city(s: pd.Series) -> pd.Series:
     )
 
 
+def _coalesce(df: pd.DataFrame, out: str, candidates: list[str]) -> pd.DataFrame:
+    """Create df[out] from the first existing column in candidates (if df[out] missing)."""
+    if out in df.columns:
+        return df
+    for c in candidates:
+        if c in df.columns:
+            df[out] = df[c]
+            return df
+    return df
+
+
 # -----------------------------
 # Main builder
 # -----------------------------
@@ -172,6 +183,22 @@ def build_merged_dataset(
     # ---- Clean promo event fields
     df["promo_flag_event"] = df["promo_flag_event"].fillna(0).astype(int)
     df["discount_pct_event"] = df["discount_pct_event"].fillna(0)
+
+    # ---- Canonicalise common columns (prevents *_x/*_y confusion downstream)
+    df = _coalesce(df, "store_size", ["store_size_y", "store_size_x"])
+    df = _coalesce(df, "category", ["category_y", "category_x"])
+    df = _coalesce(df, "regular_price", ["regular_price_y", "regular_price_x"])
+
+    drop_dupes = [
+        c for c in [
+            "store_size_x", "store_size_y",
+            "category_x", "category_y",
+            "regular_price_x", "regular_price_y"
+        ]
+        if c in df.columns
+    ]
+    if drop_dupes:
+        df = df.drop(columns=drop_dupes)
 
     # ---- Save
     if save:
