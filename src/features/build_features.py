@@ -106,21 +106,24 @@ def add_lag_rolling_features(
     out = out.sort_values(sort_cols)
 
     if group_cols:
-        g = out.groupby(group_cols, sort=False)[target_col]
+        # Sort to ensure correct time order within groups
+        out = out.sort_values([*group_cols, date_col])
 
-        # Lag features
+        # Lag features (safe)
         for lag in lags:
-            out[f"{target_col}_lag_{lag}"] = g.shift(lag)
+            out[f"{target_col}_lag_{lag}"] = out.groupby(group_cols)[target_col].shift(lag)
 
-        # Rolling features computed on shifted series to prevent leakage
-        shifted = g.shift(1)
+        # Rolling features on shifted series (prevents leakage)
+        shifted = out.groupby(group_cols)[target_col].shift(1)
+
         for w in windows:
             out[f"{target_col}_rollmean_{w}"] = (
-                shifted.rolling(w).mean().reset_index(level=group_cols, drop=True)
+                shifted.groupby(out[group_cols].apply(tuple, axis=1)).transform(lambda s: s.rolling(w).mean())
             )
             out[f"{target_col}_rollstd_{w}"] = (
-                shifted.rolling(w).std().reset_index(level=group_cols, drop=True)
+                shifted.groupby(out[group_cols].apply(tuple, axis=1)).transform(lambda s: s.rolling(w).std())
             )
+
     else:
         # Lag features
         for lag in lags:
