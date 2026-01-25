@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import joblib
-import pandas as pd
 
 from src.data.make_dataset import build_merged_dataset
 from src.features.build_features import build_forecast_features
@@ -22,9 +21,8 @@ def run_revenue_plan(
     model_path: str = "models/xgb_revenue_forecast.pkl",
 ) -> dict:
     """
-    Returns:
-      - daily forecast rows (optional heavy)
-      - monthly totals for planning (AVW-style)
+    Planning runner:
+    Returns monthly totals for planning (AVW-style).
     """
 
     df = build_merged_dataset(save=False)
@@ -46,13 +44,11 @@ def run_revenue_plan(
 
     monthly_total = aggregate_monthly(fut_pred)
 
-    # Convert monthly table to JSON-friendly list of dicts
-    monthly_records = monthly_total.to_dict(orient="records")
-
     return {
         "anchor_date": anchor_date,
         "start_date": start_date,
         "end_date": end_date,
+        "history_months": history_months,
         "assumptions": {"promo_flag": promo_flag, "discount_pct": discount_pct},
-        "monthly_total": monthly_records,
+        "monthly_total": monthly_total.to_dict(orient="records"),
     }

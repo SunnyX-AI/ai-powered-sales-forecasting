@@ -9,6 +9,9 @@ Endpoints:
 - GET  /monitoring/recent -> recent prediction logs
 - GET  /monitoring/alerts -> simple alert rules
 - POST /ask -> GenAI copilot (experimental)
+
+ADDED:
+- POST /plan/revenue -> Q1 (or any range) revenue planning output (AVW-style monthly totals)
 """
 
 from __future__ import annotations
@@ -27,6 +30,9 @@ from src.genai.copilot import run_copilot
 from src.api.routes.agents import router as agents_router
 from src.api.routes.decision import router as decision_router
 
+# ✅ ADDED (Planning)
+from src.planning.plan_q1 import run_revenue_plan
+
 
 app = FastAPI(
     title="AI-Powered Retail Decision Intelligence Platform",
@@ -35,6 +41,7 @@ app = FastAPI(
 )
 app.include_router(agents_router)
 app.include_router(decision_router)
+
 # -----------------------------
 # Load artifacts at startup
 # -----------------------------
@@ -97,6 +104,16 @@ class PredictResponse(BaseModel):
 class AskRequest(BaseModel):
     query: str
     payload: Optional[Dict[str, Any]] = None
+
+
+# ✅ ADDED: Planning schema
+class RevenuePlanRequest(BaseModel):
+    anchor_date: str = "2024-12-31"     # planning cut-off (we assume “we are in December”)
+    start_date: str = "2025-01-01"      # forecast start (e.g., Jan)
+    end_date: str = "2025-03-31"        # forecast end (e.g., Mar)
+    history_months: int = 6             # how many months of history to base lags on
+    promo_flag: int = 0                 # baseline promo assumption
+    discount_pct: float = 0.0           # baseline discount assumption
 
 
 # -----------------------------
@@ -169,13 +186,33 @@ def predict_example(
     return predict_example_from_existing_data(date=date, store_id=store_id, product_id=product_id)
 
 
+# ✅ ADDED: Planning endpoint (AVW-style monthly totals)
+@app.post("/plan/revenue", tags=["planning"])
+def plan_revenue(req: RevenuePlanRequest) -> Dict[str, Any]:
+    """
+    Planning endpoint:
+    - Uses last N months before anchor_date as history
+    - Builds future frame for [start_date, end_date]
+    - Runs recursive forecast
+    - Returns monthly totals (AVW-style)
+    """
+    return run_revenue_plan(
+        anchor_date=req.anchor_date,
+        start_date=req.start_date,
+        end_date=req.end_date,
+        history_months=req.history_months,
+        promo_flag=req.promo_flag,
+        discount_pct=req.discount_pct,
+    )
+
+
 @app.post("/ask", tags=["genai"])
 def ask(req: AskRequest):
     payload = req.payload or {}
     return run_copilot(req.query, payload, DOCS)
 
 
-@app.get("/monitoring/recent",tags=["monitoring"])
+@app.get("/monitoring/recent", tags=["monitoring"])
 def monitoring_recent(limit: int = 50) -> Dict[str, Any]:
     df = read_recent_predictions(limit=limit)
     if df.empty:

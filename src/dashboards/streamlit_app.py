@@ -11,7 +11,6 @@ st.set_page_config(page_title="SunnyBest Analytics Platform", layout="wide")
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 
-
 # -----------------------------
 # Helpers
 # -----------------------------
@@ -22,6 +21,12 @@ def api_get(path: str, params: dict | None = None):
 def api_post(path: str, json: dict):
     url = f"{API_BASE_URL}{path}"
     return requests.post(url, json=json, timeout=20)
+
+def safe_json(res: requests.Response) -> dict:
+    try:
+        return res.json()
+    except Exception:
+        return {"raw_text": res.text}
 
 
 # -----------------------------
@@ -50,10 +55,8 @@ except Exception as e:
 # -----------------------------
 # Tabs
 # -----------------------------
-# =============================
-# 1) Update Tabs (add tab9)
-# =============================
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs([
+# ✅ Added tab11: Revenue Planning (Q1 / AVW-Style)
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = st.tabs([
     "Overview",
     "Predict (Revenue + Stockout)",
     "Predict Example (From Data)",
@@ -63,7 +66,8 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs([
     "Pricing Agent (Recommendations)",
     "Inventory Agent (Reorder Decisions)",
     "Decision Summary (One-Click)",
-    "Decision Plan (Pricing + Inventory)"
+    "Decision Plan (Pricing + Inventory)",
+    "Revenue Planning (Q1 / AVW-Style)"
 ])
 
 
@@ -85,6 +89,7 @@ with tab1:
 - Run a prediction from a real historical row via `GET /predict/example`
 - Answer questions via the experimental GenAI layer `POST /ask`
 """)
+
 
 
 # -----------------------------
@@ -140,17 +145,17 @@ with tab2:
         try:
             res = api_post("/predict", payload)
             if res.status_code == 200:
-                out = res.json()
+                out = safe_json(res)
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Predicted Revenue (₦)", f"{out['predicted_revenue']:,.2f}")
                 m2.metric("Stockout Probability", f"{out['stockout_probability']:.3f}")
                 m3.metric("Stockout Risk Band", out.get("stockout_risk_band", "N/A"))
                 st.success("Prediction successful ✅")
-            
             else:
                 st.error(f"API error {res.status_code}: {res.text}")
         except Exception as e:
             st.error(f"Request failed: {e}")
+
 
 
 # -----------------------------
@@ -180,13 +185,14 @@ with tab3:
         try:
             res = api_get("/predict/example", params=params if params else None)
             if res.status_code == 200:
-                out = res.json()
+                out = safe_json(res)
                 st.success("Example prediction returned ✅")
                 st.json(out)
             else:
                 st.error(f"API error {res.status_code}: {res.text}")
         except Exception as e:
             st.error(f"Request failed: {e}")
+
 
 
 # -----------------------------
@@ -204,7 +210,6 @@ with tab4:
     if st.button("Ask Copilot"):
         req = {"query": query}
         if attach_payload:
-            # reuse a minimal payload example if user didn't run predict
             req["payload"] = {
                 "category": "Mobile Phones",
                 "store_size": "Large",
@@ -217,9 +222,8 @@ with tab4:
         try:
             res = api_post("/ask", req)
             if res.status_code == 200:
-                out = res.json()
+                out = safe_json(res)
                 st.success("Copilot response ✅")
-                # If run_copilot returns a string:
                 if isinstance(out, str):
                     st.write(out)
                 else:
@@ -228,6 +232,7 @@ with tab4:
                 st.error(f"API error {res.status_code}: {res.text}")
         except Exception as e:
             st.error(f"Request failed: {e}")
+
 
 
 # -------------------------
@@ -244,7 +249,7 @@ with tab5:
     try:
         response = api_get("/pricing/elasticity")
         response.raise_for_status()
-        data = response.json().get("items", [])
+        data = safe_json(response).get("items", [])
 
         if not data:
             st.warning("Elasticity table is empty. Build the artifact first.")
@@ -255,6 +260,8 @@ with tab5:
     except Exception as e:
         st.error("Failed to fetch elasticity data from API")
         st.exception(e)
+
+
 
 # -----------------------------
 # TAB 6: MONITORING
@@ -270,7 +277,7 @@ with tab6:
         try:
             res = api_get("/monitoring/recent", params={"limit": 50})
             res.raise_for_status()
-            items = res.json().get("items", [])
+            items = safe_json(res).get("items", [])
             if not items:
                 st.info("No logs yet. Run a few predictions first.")
             else:
@@ -285,7 +292,7 @@ with tab6:
         try:
             res = api_get("/monitoring/alerts", params={"limit": 200})
             res.raise_for_status()
-            alerts = res.json().get("alerts", [])
+            alerts = safe_json(res).get("alerts", [])
 
             if not alerts:
                 st.success("No alerts ✅")
@@ -303,6 +310,8 @@ with tab6:
             st.error("Failed to load alerts")
             st.exception(e)
 
+
+
 # -----------------------------
 # TAB 7: Pricing Agents
 # -----------------------------
@@ -315,7 +324,6 @@ with tab7:
         "recommended pricing action."
     )
 
-    # --- Inputs ---
     with st.form("pricing_agent_form"):
         c1, c2, c3 = st.columns(3)
 
@@ -333,7 +341,6 @@ with tab7:
             promo_flag = st.selectbox("Promo Flag", [0, 1], index=1)
             starting_inventory = st.number_input("Starting Inventory", min_value=0, value=12, step=1)
 
-            # guardrails / constraints
             max_discount = st.slider("Max Discount Guardrail (%)", 0, 80, 30, step=5)
             min_margin_pct = st.slider("Min Margin Guardrail (%)", 0, 80, 15, step=5)
             max_stockout_probability = st.slider("Max Stockout Probability", 0.0, 1.0, 0.60, step=0.05)
@@ -341,17 +348,14 @@ with tab7:
         agent_submitted = st.form_submit_button("Run Pricing Agent")
 
     if agent_submitted:
-        # ✅ Request shape MUST match PricingAgentRequest in routes/agents.py
         req = {
             "payload": {
-                # must match /predict payload keys your model expects
                 "price": float(current_price),
                 "regular_price": float(regular_price),
                 "discount_pct": float(discount_pct),
                 "promo_flag": int(promo_flag),
                 "month": int(month),
 
-                # defaults for now (add inputs later if you want)
                 "is_weekend": 0,
                 "is_holiday": 0,
                 "is_payday": 0,
@@ -365,8 +369,6 @@ with tab7:
                 "starting_inventory": int(starting_inventory),
             },
             "objective": "revenue",
-
-            # constraints expected by API schema
             "max_discount_pct": float(max_discount),
             "max_stockout_probability": float(max_stockout_probability),
             "min_margin_pct": float(min_margin_pct),
@@ -378,16 +380,14 @@ with tab7:
         st.code(req, language="json")
 
         try:
-            # ✅ correct endpoint
             res = api_post("/agent/pricing/recommend", req)
 
             if res.status_code != 200:
                 st.error(f"Agent API error {res.status_code}: {res.text}")
             else:
-                out = res.json()
+                out = safe_json(res)
                 st.success("Pricing Agent recommendation returned ✅")
 
-                # ✅ correct response parsing (your agent returns recommendation inside "recommendation")
                 rec = out.get("recommendation", {})
 
                 rec_price = rec.get("recommended_price")
@@ -422,6 +422,7 @@ with tab7:
         except Exception as e:
             st.error("Failed to call Pricing Agent endpoint")
             st.exception(e)
+
 
 
 # -----------------------------
@@ -468,7 +469,6 @@ with tab8:
                 "promo_flag": int(inv_promo_flag),
                 "month": int(inv_month),
 
-                # defaults for now (same as pricing tab)
                 "is_weekend": 0,
                 "is_holiday": 0,
                 "is_payday": 0,
@@ -494,7 +494,7 @@ with tab8:
             if res.status_code != 200:
                 st.error(f"Agent API error {res.status_code}: {res.text}")
             else:
-                out = res.json()
+                out = safe_json(res)
                 st.success("Inventory Agent recommendation returned ✅")
 
                 rec = out.get("recommendation", out)
@@ -526,6 +526,7 @@ with tab8:
         except Exception as e:
             st.error("Failed to call Inventory Agent endpoint")
             st.exception(e)
+
 
 
 # =============================
@@ -575,7 +576,6 @@ with tab9:
         run_ds = st.form_submit_button("Run Decision Summary")
 
     if run_ds:
-        # Base payload that your models expect (same pattern as tab7/tab8)
         base_payload = {
             "price": float(ds_price),
             "regular_price": float(ds_regular_price),
@@ -619,24 +619,20 @@ with tab9:
         st.code({"predict_payload": base_payload, "pricing_req": pricing_req, "inventory_req": inventory_req}, language="json")
 
         try:
-            # 1) Predict
             pred_res = api_post("/predict", base_payload)
             pred_res.raise_for_status()
-            pred_out = pred_res.json()
+            pred_out = safe_json(pred_res)
 
-            # 2) Pricing Agent
             price_res = api_post("/agent/pricing/recommend", pricing_req)
             price_res.raise_for_status()
-            price_out = price_res.json()
+            price_out = safe_json(price_res)
 
-            # 3) Inventory Agent
             inv_res = api_post("/agent/inventory/recommend", inventory_req)
             inv_res.raise_for_status()
-            inv_out = inv_res.json()
+            inv_out = safe_json(inv_res)
 
             st.success("Decision Summary generated ✅")
 
-            # ----- Extract results safely -----
             predicted_revenue = pred_out.get("predicted_revenue")
             stockout_probability = pred_out.get("stockout_probability")
             stockout_risk_band = pred_out.get("stockout_risk_band")
@@ -651,7 +647,6 @@ with tab9:
             reorder_qty = inv_rec.get("reorder_qty") or inv_rec.get("recommended_order_qty")
             inv_why = inv_out.get("why", inv_rec.get("why", []))
 
-            # ----- Executive metrics -----
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("Predicted Revenue (₦)", f"{float(predicted_revenue):,.2f}" if predicted_revenue is not None else "N/A")
             m2.metric("Stockout Probability", f"{float(stockout_probability):.3f}" if stockout_probability is not None else "N/A")
@@ -698,6 +693,7 @@ with tab9:
         except Exception as e:
             st.error("Failed to generate Decision Summary.")
             st.exception(e)
+
 
 
 # -----------------------------
@@ -757,7 +753,6 @@ with tab10:
                 "promo_flag": int(d_promo_flag),
                 "month": int(d_month),
 
-                # defaults (same trick as your other tabs)
                 "is_weekend": 0,
                 "is_holiday": 0,
                 "is_payday": 0,
@@ -769,7 +764,6 @@ with tab10:
                 "starting_inventory": int(d_starting_inventory),
             },
 
-            # pricing
             "pricing_objective": pricing_objective,
             "max_discount_pct": float(max_discount_pct),
             "max_stockout_probability_pricing": float(max_stockout_pricing),
@@ -778,7 +772,6 @@ with tab10:
             "max_price_factor": float(max_price_factor),
             "n_grid": int(n_grid),
 
-            # inventory
             "max_stockout_probability_inventory": float(max_stockout_inventory),
             "safety_stock_units": int(safety_stock_units),
             "max_reorder_units": int(max_reorder_units),
@@ -791,7 +784,7 @@ with tab10:
             if res.status_code != 200:
                 st.error(f"Decision API error {res.status_code}: {res.text}")
             else:
-                out = res.json()
+                out = safe_json(res)
                 st.success("Decision Plan returned ✅")
 
                 plan = out.get("plan", {})
@@ -804,7 +797,7 @@ with tab10:
                 cA.metric("Recommended Price", f"{pricing_action.get('recommended_price', 'N/A')}")
                 cB.metric("Recommended Discount %", f"{pricing_action.get('recommended_discount_pct', 'N/A')}")
                 cC.metric("Reorder Now?", str(inventory_action.get("trigger_reorder", "N/A")))
-                cD.metric("Reorder Units", str(inventory_action.get("recommended_reorder_units", "N/A")))
+                cD.metric("Reorder Units", str(inventory_action.get("recommended_reorder_units", 'N/A')))
 
                 notes = plan.get("notes", [])
                 if notes:
@@ -817,4 +810,105 @@ with tab10:
 
         except Exception as e:
             st.error("Failed to call /decision/plan")
+            st.exception(e)
+
+
+
+# =============================
+# TAB 11: REVENUE PLANNING (NEW)
+# =============================
+with tab11:
+    st.subheader("📆 Revenue Planning (Q1 / AVW-Style)")
+    st.caption("Calls: `POST /plan/revenue` (monthly totals for planning)")
+
+    st.info(
+        "This is the AVW-style planning view. "
+        "You pick an anchor date (e.g., end of December), a forecast window (Jan–Mar), "
+        "and scenario assumptions (promo/discount). The API returns monthly totals for planning."
+    )
+
+    with st.form("revenue_plan_form"):
+        p1, p2, p3 = st.columns(3)
+
+        with p1:
+            anchor_date = st.text_input("Anchor Date (YYYY-MM-DD)", value="2024-12-31")
+            history_months = st.slider("History Months (lookback)", min_value=1, max_value=24, value=6, step=1)
+
+        with p2:
+            start_date = st.text_input("Forecast Start Date (YYYY-MM-DD)", value="2025-01-01")
+            end_date = st.text_input("Forecast End Date (YYYY-MM-DD)", value="2025-03-31")
+
+        with p3:
+            promo_flag = st.selectbox("Promo Flag (assumption)", [0, 1], index=0)
+            discount_pct = st.number_input("Discount % (assumption)", min_value=0.0, max_value=100.0, value=0.0, step=1.0)
+
+        run_plan = st.form_submit_button("Run Revenue Plan")
+
+    if run_plan:
+        req = {
+            "anchor_date": anchor_date,
+            "start_date": start_date,
+            "end_date": end_date,
+            "history_months": int(history_months),
+            "promo_flag": int(promo_flag),
+            "discount_pct": float(discount_pct),
+        }
+
+        st.code(req, language="json")
+
+        try:
+            res = api_post("/plan/revenue", req)
+
+            if res.status_code != 200:
+                st.error(f"Planning API error {res.status_code}: {res.text}")
+            else:
+                out = safe_json(res)
+                st.success("Revenue plan returned ✅")
+
+                monthly = out.get("monthly_total", [])
+
+                if not monthly:
+                    st.warning("No monthly totals returned. Check API response shape.")
+                    st.json(out)
+                else:
+                    dfm = pd.DataFrame(monthly)
+
+                    # Try to standardize month column naming
+                    # (aggregate_monthly might return 'month' or 'year_month')
+                    if "year_month" in dfm.columns:
+                        dfm["month"] = dfm["year_month"].astype(str)
+                    elif "month" in dfm.columns and dfm["month"].dtype != object:
+                        dfm["month"] = dfm["month"].astype(str)
+
+                    st.write("### Monthly Totals (Planning)")
+                    st.dataframe(dfm, use_container_width=True)
+
+                    # Identify the total column
+                    total_col = None
+                    for cand in ["pred_revenue", "predicted_revenue", "revenue", "total_revenue", "monthly_revenue"]:
+                        if cand in dfm.columns:
+                            total_col = cand
+                            break
+
+                    if total_col is not None and "month" in dfm.columns:
+                        st.write("### Trend (Monthly)")
+                        chart_df = dfm[["month", total_col]].copy()
+                        chart_df = chart_df.sort_values("month")
+                        chart_df = chart_df.set_index("month")
+                        st.line_chart(chart_df)
+
+                    # Download option
+                    csv = dfm.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label="Download Monthly Plan CSV",
+                        data=csv,
+                        file_name="sunnybest_revenue_plan_monthly.csv",
+                        mime="text/csv",
+                    )
+
+                    st.write("### Full Response (debug)")
+                    st.json(out)
+
+        except Exception as e:
+            st.error("Failed to call /plan/revenue")
             st.exception(e)
