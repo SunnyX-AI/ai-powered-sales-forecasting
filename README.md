@@ -6,7 +6,7 @@ An end-to-end **AI, Machine Learning, and Generative AI–driven retail analytic
 This project demonstrates how modern data science, forecasting, pricing analytics, and **Generative AI (RAG + LLMs)** can be combined into a single system to support **real-world retail decision-making**, rather than isolated models or dashboards.
 
 ---
-## 🏗️ System Architecture
+# 🏗️ System Architecture
 
 ![SunnyBest SFS Architecture](assets/SFS_architecture.png)
 
