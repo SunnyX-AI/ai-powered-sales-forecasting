@@ -8,7 +8,7 @@ This project demonstrates how modern data science, forecasting, pricing analytic
 ---
 ## 🏗️ System Architecture
 
-![SunnyBest SFS Architecture](assets/architecture.png)
+![SunnyBest SFS Architecture](assets/SFS_architecture.png)
 
 ## 📸 System Snapshot
 
