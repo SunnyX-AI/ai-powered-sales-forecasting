@@ -10,6 +10,7 @@ This project demonstrates how modern data science, forecasting, pricing analytic
 
 ![SunnyBest SFS Architecture](assets/SFS_architecture.png)
 
+
 ## 📸 System Snapshot
 
 ![API Swagger Docs](assets/screenshots/swagger_docs.png)
