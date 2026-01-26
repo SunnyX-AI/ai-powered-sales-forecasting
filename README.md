@@ -230,14 +230,14 @@ retail-sales-forecasting-genai/
 │   ├── raw/
 │   ├── processed/                # gitignored
 │   ├── external/
-│   └── knowledge/                # ✅ NEW (RAG knowledge base)
-│       ├── docs/                 # ✅ NEW
-│       │   ├── README.md         # ✅ NEW (copy of project README for RAG)
-│       │   ├── assumptions.md    # ✅ NEW
-│       │   ├── changelog.md      # ✅ NEW
-│       │   └── data_dictionary.md# ✅ NEW
-│       ├── chunks.jsonl          # ✅ NEW
-│       └── embeddings.npz        # ✅ NEW
+│   └── knowledge/                # RAG knowledge base
+│       ├── docs/                 
+│       │   ├── README.md         # (copy of project README for RAG)
+│       │   ├── assumptions.md    
+│       │   ├── changelog.md      
+│       │   └── data_dictionary.md
+│       ├── chunks.jsonl          
+│       └── embeddings.npz        
 
 ├── notebooks/
 │   ├── 01_eda_sunnybest.ipynb
@@ -289,17 +289,17 @@ retail-sales-forecasting-genai/
 │   │   ├── prompts/
 │   │   ├── eval/
 │   │   ├── prompt_registry.py
-│   │   ├── openai_client.py          # ✅ NEW (central OpenAI client wrapper)
-│   │   ├── schemas.py                # ✅ NEW (Pydantic/typed schemas for GenAI IO)
-│   │   ├── routes_genai.py           # ✅ NEW (optional helper; can be used by api/routes/genai.py)
-│   │   ├── rag/                      # ✅ NEW (clean submodule; keeps old files untouched)
-│   │   │   ├── __init__.py           # ✅ NEW
-│   │   │   ├── build_kb.py           # ✅ NEW (build chunks + embeddings)
-│   │   │   ├── store.py              # ✅ NEW (local vector store helpers)
-│   │   │   └── retrieve.py           # ✅ NEW (top-k retrieval)
-│   │   └── tools/                    # ✅ NEW (wrappers around YOUR forecasting funcs)
-│   │       ├── __init__.py           # ✅ NEW
-│   │       └── forecast_tools.py     # ✅ NEW (tool specs + run_revenue_forecast wrapper)
+│   │   ├── openai_client.py          # central OpenAI client wrapper
+│   │   ├── schemas.py                # Pydantic/typed schemas for GenAI IO
+│   │   ├── routes_genai.py           # optional helper; can be used by api/routes/genai.py
+│   │   ├── rag/                      # clean submodule; keeps old files untouched
+│   │   │   ├── __init__.py           
+│   │   │   ├── build_kb.py           # build chunks + embeddings
+│   │   │   ├── store.py              # local vector store helpers
+│   │   │   └── retrieve.py           # top-k retrieval
+│   │   └── tools/                    # wrappers around YOUR forecasting funcs
+│   │       ├── __init__.py         
+│   │       └── forecast_tools.py     # tool specs + run_revenue_forecast wrapper
 
 │   ├── agents/
 │   │   ├── __init__.py
@@ -331,7 +331,7 @@ retail-sales-forecasting-genai/
 │   │       ├── predict.py
 │   │       ├── agents.py
 │   │       ├── monitoring.py
-│   │       └── genai.py              # ✅ NEW (FastAPI endpoints: /genai/*)
+│   │       └── genai.py              # FastAPI endpoints: /genai/*
 
 │   ├── dashboards/
 │   │   ├── __init__.py
@@ -378,7 +378,7 @@ retail-sales-forecasting-genai/
 │   ├── test_agents.py
 │   ├── test_data_schema.py
 │   ├── test_monitoring.py
-│   └── test_genai.py               # ✅ NEW (basic /genai route tests)
+│   └── test_genai.py               # basic /genai route tests
 
 └── assets/
     ├── architecture.png
