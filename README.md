@@ -224,12 +224,20 @@ retail-sales-forecasting-genai/
 ├── setup.cfg
 ├── requirements.txt
 ├── .gitignore
-├── Makefile                      # one-command workflows (train/test/lint/run)
+├── Makefile
 
 ├── data/
 │   ├── raw/
 │   ├── processed/                # gitignored
-│   └── external/
+│   ├── external/
+│   └── knowledge/                # ✅ NEW (RAG knowledge base)
+│       ├── docs/                 # ✅ NEW
+│       │   ├── README.md         # ✅ NEW (copy of project README for RAG)
+│       │   ├── assumptions.md    # ✅ NEW
+│       │   ├── changelog.md      # ✅ NEW
+│       │   └── data_dictionary.md# ✅ NEW
+│       ├── chunks.jsonl          # ✅ NEW
+│       └── embeddings.npz        # ✅ NEW
 
 ├── notebooks/
 │   ├── 01_eda_sunnybest.ipynb
@@ -247,9 +255,9 @@ retail-sales-forecasting-genai/
 
 │   ├── config/
 │   │   ├── __init__.py
-│   │   ├── settings.py            # central config loader
-│   │   ├── constraints.yaml       # business guardrails (max discount, min margin, etc.)
-│   │   └── registry.yaml          # model + prompt registry pointers
+│   │   ├── settings.py
+│   │   ├── constraints.yaml
+│   │   └── registry.yaml
 
 │   ├── data/
 │   │   ├── __init__.py
@@ -264,13 +272,13 @@ retail-sales-forecasting-genai/
 │   │   ├── train_forecast.py
 │   │   ├── train_stock.py
 │   │   ├── predict.py
-│   │   └── registry.py            # get_model_version(), load_model()
+│   │   └── registry.py
 
 │   ├── pricing/
 │   │   ├── __init__.py
 │   │   ├── build_elasticity.py
 │   │   ├── elasticity.py
-│   │   └── optimizer.py           
+│   │   └── optimizer.py
 
 │   ├── genai/
 │   │   ├── __init__.py
@@ -280,38 +288,50 @@ retail-sales-forecasting-genai/
 │   │   ├── rag_qa.py
 │   │   ├── prompts/
 │   │   ├── eval/
-│   │   └── prompt_registry.py     # prompt versioning utilities
+│   │   ├── prompt_registry.py
+│   │   ├── openai_client.py          # ✅ NEW (central OpenAI client wrapper)
+│   │   ├── schemas.py                # ✅ NEW (Pydantic/typed schemas for GenAI IO)
+│   │   ├── routes_genai.py           # ✅ NEW (optional helper; can be used by api/routes/genai.py)
+│   │   ├── rag/                      # ✅ NEW (clean submodule; keeps old files untouched)
+│   │   │   ├── __init__.py           # ✅ NEW
+│   │   │   ├── build_kb.py           # ✅ NEW (build chunks + embeddings)
+│   │   │   ├── store.py              # ✅ NEW (local vector store helpers)
+│   │   │   └── retrieve.py           # ✅ NEW (top-k retrieval)
+│   │   └── tools/                    # ✅ NEW (wrappers around YOUR forecasting funcs)
+│   │       ├── __init__.py           # ✅ NEW
+│   │       └── forecast_tools.py     # ✅ NEW (tool specs + run_revenue_forecast wrapper)
 
-│   ├── agents/                    # AGENTIC AI LAYER
+│   ├── agents/
 │   │   ├── __init__.py
-│   │   ├── base.py                # Agent interface + shared logic
-│   │   ├── pricing_agent.py       # price recommendations (multi-step)
-│   │   ├── promo_agent.py         # promo decisions (multi-step)
-│   │   ├── inventory_agent.py     # reorder decisions (multi-step)
-│   │   └── policies.py            # guardrails + safe action flows
+│   │   ├── base.py
+│   │   ├── pricing_agent.py
+│   │   ├── promo_agent.py
+│   │   ├── inventory_agent.py
+│   │   └── policies.py
 
-│   ├── governance/                # AUDIT / COMPLIANCE LAYER
+│   ├── governance/
 │   │   ├── __init__.py
-│   │   ├── audit_log.py           # write decision logs
-│   │   ├── schemas.py             # log schema definitions
-│   │   ├── fairness.py            # simple bias checks by region/store/category
-│   │   └── explainability.py      # SHAP/permutation importance hooks
+│   │   ├── audit_log.py
+│   │   ├── schemas.py
+│   │   ├── fairness.py
+│   │   └── explainability.py
 
 │   ├── monitoring/
 │   │   ├── __init__.py
-│   │   ├── store.py               # log writers
-│   │   ├── rules.py               # thresholds & alert rules
-│   │   ├── metrics.py             # NEW: forecast MAE/RMSE, drift metrics
-│   │   └── drift.py               # NEW: PSI/KS drift checks
+│   │   ├── store.py
+│   │   ├── rules.py
+│   │   ├── metrics.py
+│   │   └── drift.py
 
 │   ├── api/
 │   │   ├── __init__.py
 │   │   ├── app.py
 │   │   └── routes/
 │   │       ├── __init__.py
-│   │       ├── predict.py         # existing predict endpoints
-│   │       ├── agents.py          # NEW: /agent/* endpoints
-│   │       └── monitoring.py      # NEW: /monitoring/* endpoints
+│   │       ├── predict.py
+│   │       ├── agents.py
+│   │       ├── monitoring.py
+│   │       └── genai.py              # ✅ NEW (FastAPI endpoints: /genai/*)
 
 │   ├── dashboards/
 │   │   ├── __init__.py
@@ -330,7 +350,7 @@ retail-sales-forecasting-genai/
 │       ├── snowflake_schema.sql
 │       └── staging_load.sql
 
-├── monitoring/             
+├── monitoring/
 │   ├── README.md
 │   ├── predictions_log.csv
 │   ├── agent_decisions.csv
@@ -348,16 +368,18 @@ retail-sales-forecasting-genai/
 ├── infra/
 │   └── terraform/
 
-├── models/                        # saved artifacts (gitignore big files if needed)
+├── models/
 │   ├── xgb_revenue_forecast.pkl
 │   └── stockout_classifier.pkl
 
-├── mlruns/                        # (gitignored)
+├── mlruns/
 ├── tests/
-│   ├── test_predict.py            # basic endpoint test
-│   ├── test_agents.py             # agent decisions sanity tests
-│   ├── test_data_schema.py        # schema validation
-│   └── test_monitoring.py         # logging writes correctly
+│   ├── test_predict.py
+│   ├── test_agents.py
+│   ├── test_data_schema.py
+│   ├── test_monitoring.py
+│   └── test_genai.py               # ✅ NEW (basic /genai route tests)
+
 └── assets/
     ├── architecture.png
     └── screenshots/
