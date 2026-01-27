@@ -328,6 +328,11 @@ retail-sales-forecasting-genai/
 │   │   ├── metrics.py
 │   │   └── drift.py
 
+│   ├── planning/
+│   │   ├── __init__.py
+│   │   ├── plan_q1.py
+│   │   ├── scenarios.py
+
 │   ├── api/
 │   │   ├── __init__.py
 │   │   ├── app.py
@@ -374,7 +379,7 @@ retail-sales-forecasting-genai/
 │   └── terraform/
 
 ├── models/
-│   ├── xgb_revenue_forecast.pkl
+│   ├── revenue_forecast.pkl
 │   └── stockout_classifier.pkl
 
 ├── mlruns/
