@@ -291,8 +291,7 @@ retail-sales-forecasting-genai/
 │   │   ├── tools.py
 │   │   ├── rag_index.py
 │   │   ├── rag_qa.py
-│   │   ├── prompts/
-│   │   ├── eval/
+│   │   ├── prompts.py
 │   │   ├── prompt_registry.py
 │   │   ├── openai_client.py          # central OpenAI client wrapper
 │   │   ├── schemas.py                # Pydantic/typed schemas for GenAI IO
