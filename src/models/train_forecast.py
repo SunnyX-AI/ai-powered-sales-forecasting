@@ -35,7 +35,7 @@ RANDOM_STATE = 42
 # -----------------------------
 def train_forecast_model() -> dict:
     """
-    Train XGBoost revenue forecast model and save it.
+    Train revenue forecast model and save it.
     Returns training metrics.
     """
 
