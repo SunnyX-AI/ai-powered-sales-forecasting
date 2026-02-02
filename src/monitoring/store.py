@@ -60,3 +60,4 @@ def read_recent_predictions(limit: int = 50) -> pd.DataFrame:
     # newest last → show newest first
     df = df.tail(limit).iloc[::-1].reset_index(drop=True)
     return df
+    
