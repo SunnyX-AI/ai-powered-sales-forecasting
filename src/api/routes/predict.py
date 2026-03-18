@@ -17,11 +17,19 @@ async def predict_units_csv(file: UploadFile = File(...)):
         contents = await file.read()
         df = pd.read_csv(StringIO(contents.decode("utf-8")))
 
-        result_df = predict_units_from_dataframe(df)
+        result_df = predict_units_from_dataframe(df).copy()
+
+        # Convert datetime columns to string
+        datetime_cols = result_df.select_dtypes(include=["datetime64[ns]", "datetimetz"]).columns
+        for col in datetime_cols:
+            result_df[col] = result_df[col].astype(str)
+
+        # Convert NaN / NaT to None so JSON is valid
+        result_df = result_df.astype(object).where(pd.notnull(result_df), None)
 
         return {
             "status": "ok",
-            "rows": len(result_df),
+            "rows": int(len(result_df)),
             "items": result_df.to_dict(orient="records"),
         }
 
