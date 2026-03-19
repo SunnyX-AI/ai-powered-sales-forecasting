@@ -56,7 +56,7 @@ except Exception as e:
 # Tabs
 # -----------------------------
 # ✅ Added tab11: Revenue Planning (Q1 / AVW-Style)
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11, tab12 = st.tabs([
     "Overview",
     "Predict (Revenue + Stockout)",
     "Predict Example (From Data)",
@@ -67,7 +67,8 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = st.tabs([
     "Inventory Agent (Reorder Decisions)",
     "Decision Summary (One-Click)",
     "Decision Plan (Pricing + Inventory)",
-    "Revenue Planning (Q1 / AVW-Style)"
+    "Revenue Planning (Q1 / AVW-Style)",
+    "Predict Units (CSV Upload)"
 ])
 
 
@@ -912,3 +913,66 @@ with tab11:
         except Exception as e:
             st.error("Failed to call /plan/revenue")
             st.exception(e)
+
+
+
+# -----------------------------
+# TAB 12: PREDICT UNITS (CSV Upload)
+# -----------------------------
+with tab12:
+    st.subheader("📦 Predict Units Sold from CSV")
+    st.caption("Calls: `POST /predict/units/csv`")
+
+    st.info(
+        "Upload a CSV file containing enough historical context for each store-product "
+        "series, and the API will return predicted units_sold."
+    )
+
+    uploaded_file = st.file_uploader(
+        "Upload CSV file",
+        type=["csv"],
+        key="units_csv_upload"
+    )
+
+    if uploaded_file is not None:
+        st.write("### Uploaded File Preview")
+        preview_df = pd.read_csv(uploaded_file)
+        st.dataframe(preview_df.head(20), use_container_width=True)
+
+        # reset file pointer before sending to API
+        uploaded_file.seek(0)
+
+        if st.button("Run Units Forecast"):
+            try:
+                files = {
+                    "file": (uploaded_file.name, uploaded_file.getvalue(), "text/csv")
+                }
+                url = f"{API_BASE_URL}/predict/units/csv"
+                res = requests.post(url, files=files, timeout=60)
+
+                if res.status_code != 200:
+                    st.error(f"API error {res.status_code}: {res.text}")
+                else:
+                    out = safe_json(res)
+                    items = out.get("items", [])
+
+                    if not items:
+                        st.warning("No prediction rows returned.")
+                    else:
+                        result_df = pd.DataFrame(items)
+
+                        st.success("Units forecast generated ✅")
+                        st.write("### Forecast Results")
+                        st.dataframe(result_df, use_container_width=True)
+
+                        csv_data = result_df.to_csv(index=False).encode("utf-8")
+                        st.download_button(
+                            label="Download Forecast Results CSV",
+                            data=csv_data,
+                            file_name="sunnybest_units_forecast_results.csv",
+                            mime="text/csv",
+                        )
+
+            except Exception as e:
+                st.error("Failed to call units forecast endpoint")
+                st.exception(e)
