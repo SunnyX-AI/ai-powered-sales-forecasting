@@ -234,7 +234,7 @@ sunnybest-ai-forecasting-intelligence/
 │   ├── system_overview.md
 │   ├── business_context.md
 │   ├── data_model.md
-│   ├── data_dictionary.md
+│   ├── data_overview.md
 │   ├── forecasting_targets.md
 │   ├── methodology.md
 │   ├── assumptions.md
