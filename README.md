@@ -223,179 +223,224 @@ Generative AI is used as an **explanation and decision-support layer**, not as a
 
 ## 📁 Project Structure
 ```text
-retail-sales-forecasting-genai/
+sunnybest-ai-forecasting-intelligence/
 ├── README.md
 ├── pyproject.toml
-├── setup.cfg
 ├── requirements.txt
 ├── .gitignore
 ├── Makefile
 
+├── docs/
+│   ├── system_overview.md
+│   ├── business_context.md
+│   ├── data_model.md
+│   ├── data_dictionary.md
+│   ├── forecasting_targets.md
+│   ├── methodology.md
+│   ├── assumptions.md
+│   ├── api_reference.md
+│   ├── changelog.md
+│   └── roadmap.md
+
 ├── data/
 │   ├── raw/
-│   ├── processed/                # gitignored
+│   │   ├── foundation/
+│   │   │   ├── sunnybest_stores.csv
+│   │   │   ├── sunnybest_products.csv
+│   │   │   ├── sunnybest_calendar.csv
+│   │   │   └── sunnybest_weather.csv
+│   │   │
+│   │   ├── transactions/
+│   │   │   ├── sunnybest_sales.csv
+│   │   │   ├── sunnybest_inventory.csv
+│   │   │   └── sunnybest_promotions.csv
+│   │   │
+│   │   ├── behaviour_operations/
+│   │   │   ├── sunnybest_customer_activity.csv
+│   │   │   └── sunnybest_store_operations.csv
+│   │   │
+│   │   └── policy_constraints/
+│   │       ├── sunnybest_policy_regimes.csv
+│   │       └── sunnybest_restriction_events.csv
+│   │
+│   ├── processed/                  # gitignored
 │   ├── external/
-│   └── knowledge/                # RAG knowledge base
-│       ├── docs/                 
-│       │   ├── README.md         # (copy of project README for RAG)
-│       │   ├── assumptions.md    
-│       │   ├── changelog.md      
-│       │   └── data_dictionary.md
-│       ├── chunks.jsonl          
-│       └── embeddings.npz        
+│   └── knowledge/                 # AI/RAG knowledge base
+│       ├── chunks.jsonl
+│       └── embeddings.npz
 
 ├── notebooks/
-│   ├── 01_eda_sunnybest.ipynb
-│   ├── 02_baseline_forecast.ipynb
-│   ├── 03_ml_forecast_xgboost.ipynb
-│   ├── 04_stockout_classification.ipynb
-│   ├── 05_promo_uplift_causal.ipynb
-│   ├── 06_genai_rag_experiments.ipynb
-│   ├── 07_price_elasticity.ipynb
-│   ├── 08_pricing_optimization.ipynb
-│   └── 09_spark_data_processing.ipynb
+│   ├── 01_data_understanding.ipynb
+│   ├── 02_eda_system_overview.ipynb
+│   ├── 03_feature_engineering.ipynb
+│   ├── 04_demand_forecasting_baseline.ipynb
+│   ├── 05_ml_forecasting_xgboost.ipynb
+│   ├── 06_inventory_and_stockout_analysis.ipynb
+│   ├── 07_promotion_and_price_effects.ipynb
+│   ├── 08_operational_workload_analysis.ipynb
+│   ├── 09_policy_impact_analysis.ipynb
+│   ├── 10_scenario_planning.ipynb
+│   └── 11_genai_rag_experiments.ipynb
 
 ├── src/
 │   ├── __init__.py
 
 │   ├── config/
-│   │   ├── __init__.py
 │   │   ├── settings.py
 │   │   ├── constraints.yaml
 │   │   └── registry.yaml
 
 │   ├── data/
-│   │   ├── __init__.py
+│   │   ├── loaders.py
+│   │   ├── joins.py
 │   │   └── make_dataset.py
 
-│   ├── features/
-│   │   ├── __init__.py
-│   │   └── build_features.py
+│   ├── validation/
+│   │   ├── schema_checks.py
+│   │   ├── data_quality.py
+│   │   └── business_rules.py
 
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── train_forecast.py
-│   │   ├── train_stock.py
+│   ├── features/
+│   │   ├── build_features.py
+│   │   ├── demand_features.py
+│   │   ├── calendar_features.py
+│   │   ├── promo_features.py
+│   │   ├── inventory_features.py
+│   │   └── operational_features.py
+
+│   ├── forecasting/
+│   │   ├── train.py
 │   │   ├── predict.py
+│   │   ├── evaluate.py
+│   │   ├── backtest.py
+│   │   ├── pipelines.py
 │   │   └── registry.py
 
+│   ├── operations/
+│   │   ├── kpis.py
+│   │   ├── service_metrics.py
+│   │   ├── workload_analysis.py
+│   │   ├── bottlenecks.py
+│   │   └── operational_risk.py
+
+│   ├── inventory/
+│   │   ├── stockout_model.py
+│   │   ├── replenishment.py
+│   │   ├── service_level.py
+│   │   └── risk_scoring.py
+
 │   ├── pricing/
-│   │   ├── __init__.py
-│   │   ├── build_elasticity.py
 │   │   ├── elasticity.py
+│   │   ├── build_elasticity.py
 │   │   └── optimizer.py
 
-│   ├── genai/
-│   │   ├── __init__.py
+│   ├── policy/
+│   │   ├── policy_engine.py
+│   │   ├── policy_effects.py
+│   │   └── constraint_application.py
+
+│   ├── planning/
+│   │   ├── scenario_engine.py
+│   │   ├── what_if.py
+│   │   ├── assumptions.py
+│   │   ├── capacity_planning.py
+│   │   └── plan_generation.py
+
+│   ├── ai/
 │   │   ├── copilot.py
-│   │   ├── tools.py
-│   │   ├── rag_index.py
-│   │   ├── rag_qa.py
 │   │   ├── prompts.py
 │   │   ├── prompt_registry.py
-│   │   ├── openai_client.py          # central OpenAI client wrapper
-│   │   ├── schemas.py                # Pydantic/typed schemas for GenAI IO
-│   │   ├── routes_genai.py           # optional helper; can be used by api/routes/genai.py
-│   │   ├── rag/                      # clean submodule; keeps old files untouched
-│   │   │   ├── __init__.py           
-│   │   │   ├── build_kb.py           # build chunks + embeddings
-│   │   │   ├── store.py              # local vector store helpers
-│   │   │   └── retrieve.py           # top-k retrieval
-│   │   └── tools/                    # wrappers around YOUR forecasting funcs
-│   │       ├── __init__.py         
-│   │       └── forecast_tools.py     # tool specs + run_revenue_forecast wrapper
+│   │   ├── openai_client.py
+│   │   ├── schemas.py
+│   │
+│   │   ├── rag/
+│   │   │   ├── build_kb.py
+│   │   │   ├── store.py
+│   │   │   └── retrieve.py
+│   │
+│   │   ├── tools/
+│   │   │   └── forecast_tools.py
+│   │
+│   │   └── services/
+│   │       ├── rag_qa.py
+│   │       └── assistant.py
 
 │   ├── agents/
-│   │   ├── __init__.py
 │   │   ├── base.py
 │   │   ├── pricing_agent.py
 │   │   ├── promo_agent.py
 │   │   ├── inventory_agent.py
 │   │   └── policies.py
 
+│   ├── monitoring/
+│   │   ├── metrics.py
+│   │   ├── drift.py
+│   │   ├── rules.py
+│   │   └── store.py
+
 │   ├── governance/
-│   │   ├── __init__.py
 │   │   ├── audit_log.py
 │   │   ├── schemas.py
 │   │   ├── fairness.py
 │   │   └── explainability.py
 
-│   ├── monitoring/
-│   │   ├── __init__.py
-│   │   ├── store.py
-│   │   ├── rules.py
-│   │   ├── metrics.py
-│   │   └── drift.py
-
-│   ├── planning/
-│   │   ├── __init__.py
-│   │   ├── plan_q1.py
-│   │   ├── scenarios.py
-
 │   ├── api/
-│   │   ├── __init__.py
 │   │   ├── app.py
 │   │   └── routes/
-│   │       ├── __init__.py
 │   │       ├── predict.py
 │   │       ├── agents.py
 │   │       ├── monitoring.py
-│   │       └── genai.py              # FastAPI endpoints: /genai/*
+│   │       └── ai.py
 
-│   ├── dashboards/
-│   │   ├── __init__.py
+│   ├── dashboard/
 │   │   └── streamlit_app.py
 
 │   ├── spark/
-│   │   ├── __init__.py
 │   │   ├── spark_session.py
 │   │   ├── spark_etl.py
 │   │   ├── spark_aggregations.py
 │   │   └── spark_feature_engineering.py
 
 │   └── warehouse/
+│       ├── staging.sql
 │       ├── marts.sql
 │       ├── queries.sql
-│       ├── snowflake_schema.sql
-│       └── staging_load.sql
+│       └── schema.sql
+
+├── models/
+│   ├── demand_forecast.pkl
+│   └── stockout_model.pkl
 
 ├── monitoring/
-│   ├── README.md
 │   ├── predictions_log.csv
-│   ├── agent_decisions.csv
-│   ├── human_overrides.csv
 │   ├── forecast_metrics.csv
-│   └── drift_report.csv
+│   ├── drift_report.csv
+│   ├── agent_decisions.csv
+│   └── human_overrides.csv
 
 ├── docker/
 │   ├── Dockerfile
 │   └── Dockerfile.streamlit
 
 ├── scripts/
+│   ├── run_pipeline.sh
 │   └── demo.sh
 
 ├── infra/
 │   └── terraform/
 
-├── models/
-│   ├── revenue_forecast.pkl
-│   └── stockout_classifier.pkl
-
-├── mlruns/
 ├── tests/
-│   ├── test_predict.py
-│   ├── test_agents.py
-│   ├── test_data_schema.py
-│   ├── test_monitoring.py
-│   └── test_genai.py               # basic /genai route tests
+│   ├── test_data.py
+│   ├── test_features.py
+│   ├── test_forecasting.py
+│   ├── test_operations.py
+│   ├── test_policy.py
+│   ├── test_api.py
+│   └── test_ai.py
 
 └── assets/
     ├── architecture.png
     └── screenshots/
-        ├── streamlit_overview.png
-        ├── streamlit_predict.png
-        └── streamlit_docs.png
-
 
 ```
 
