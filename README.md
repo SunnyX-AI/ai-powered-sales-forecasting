@@ -9,9 +9,9 @@ The system transforms raw retail data into **forecast-driven inventory decisions
 
 ---
 
-# 🚀 Key Capability (What Makes This Project Strong)
+# 🚀 Key Capability
 
-This system is designed around a **real business workflow**:
+This system is designed around a **real-world business workflow**:
 
 1. Upload retail data (CSV)  
 2. Generate demand forecasts  
@@ -62,11 +62,11 @@ SunnyBest Telecommunications operates retail outlets across:
 
 Key challenges addressed:
 
-- Demand volatility and seasonality  
-- Stock-outs and lost revenue  
-- Promotion uncertainty  
-- Pricing sensitivity  
-- Limited access to insights  
+- Demand volatility and strong seasonal patterns  
+- Stock-outs leading to lost revenue and poor customer experience  
+- Uncertainty around promotion effectiveness and ROI  
+- Pricing decisions affecting demand and profitability  
+- Limited access to insights for non-technical stakeholders  
 
 ---
 
@@ -90,8 +90,8 @@ Raw Data → Data Integration → Feature Engineering → Model Training → Pre
 ### Core Flow
 
 - Data is ingested and validated  
-- Datasets are joined into a modelling table  
-- Features are engineered (lags, promos, weather, etc.)  
+- Datasets are joined into a modelling dataset  
+- Features are engineered (lags, promotions, pricing, weather, etc.)  
 - Models predict **daily demand (units_sold)**  
 - Forecasts are aggregated into:
   - Weekly demand  
@@ -119,7 +119,7 @@ Recommended Order = Forecast Demand − Current Inventory
 
 - Demand forecasts  
 - Revenue projections  
-- Stock-out risk  
+- Stock-out risk indicators  
 - Inventory gaps  
 - Recommended stock orders  
 
@@ -127,7 +127,7 @@ Recommended Order = Forecast Demand − Current Inventory
 
 # 🧠 Generative AI Layer
 
-- RAG over system knowledge  
+- Retrieval-Augmented Generation (RAG) over system knowledge  
 - Natural language queries:
   - “Why did sales drop?”  
   - “Which stores are at risk?”  
@@ -137,27 +137,27 @@ Recommended Order = Forecast Demand − Current Inventory
 
 # 📈 Key Findings
 
-- ML models outperform statistical baselines  
-- Stock-out risk is highest in high-demand categories  
-- Promotions increase demand but also stock-out risk  
-- Demand is relatively price inelastic in some segments  
-- Category-specific pricing outperforms uniform discounting  
+- Machine learning–based forecasting outperforms statistical baselines  
+- Stock-out risk is highest in high-demand categories and smaller stores  
+- Promotions increase demand but also increase stock-out risk  
+- Demand appears relatively price inelastic within tested ranges  
+- Category-specific pricing strategies outperform uniform discounting  
 
 ---
 
 # 🧪 Demo Flow
 
-1. Launch dashboard  
-2. Upload data / explore metrics  
-3. Generate forecasts  
-4. View inventory recommendations  
-5. Analyse pricing & promotion impact  
+1. Launch the Streamlit dashboard  
+2. View high-level KPIs (revenue, demand, stock-out rate)  
+3. Generate forecasts from input data  
+4. Analyse inventory gaps and recommendations  
+5. Explore pricing and promotion effects  
 
 ---
 
 # 🚀 How to Run
 
-### Local
+### 🔹 Local Development
 
 ```bash
 pip install -r requirements.txt
@@ -165,38 +165,69 @@ python -m uvicorn src.api.app:app --reload --port 8000
 streamlit run src/dashboard/streamlit_app.py
 ```
 
-- API: http://localhost:8000/docs  
+- API Docs: http://localhost:8000/docs  
 - Dashboard: http://localhost:8501  
 
 ---
 
-### Docker
+### 🔹 Docker (Full System)
 
 ```bash
 docker compose up --build
 ```
 
----
+Stop services:
 
-# 📁 Project Structure
-
-(unchanged — keep your current structure here)
+```bash
+docker compose down
+```
 
 ---
 
 # 🚦 Implementation Status
 
-(keep your table — it's good)
+| Component | Status | Notes |
+|---------|--------|-------|
+| Repository structure | ✅ Implemented | Modular, scalable layout |
+| Synthetic data generation | ✅ Implemented | Retail-like dataset |
+| Exploratory Data Analysis | ✅ Implemented | EDA notebooks completed |
+| Baseline forecasting | ✅ Implemented | Statistical benchmarks |
+| ML forecasting (XGBoost) | ✅ Implemented | Model trained & evaluated |
+| Stock-out classification | ✅ Implemented | Binary classifier |
+| Pricing analysis | ⚠️ Partial | Elasticity & optimisation |
+| GenAI RAG experiments | ⚠️ Experimental | Notebook-based |
+| FastAPI backend | ✅ Implemented | API scaffold ready |
+| Dockerisation | ✅ Implemented | API & dashboard containerised |
+| AWS deployment | 🛠 Planned | Future MLOps layer |
+
+---
+
+# 📁 Project Structure
+
+```
+sunnybest-ai-forecasting-intelligence/
+├── docs/                # System documentation
+├── data/                # Raw, processed & knowledge data
+├── notebooks/           # EDA, modelling & experiments
+├── src/                 # Core system code (modular)
+├── models/              # Trained models
+├── monitoring/          # Logs & metrics
+├── docker/              # Docker configuration
+├── scripts/             # Execution scripts
+├── infra/               # Infrastructure (Terraform)
+├── tests/               # Unit tests
+└── assets/              # Images & screenshots
+```
 
 ---
 
 # 🧭 Future Enhancements
 
-- Full API-dashboard integration  
-- Automated retraining pipelines  
-- AWS deployment (EC2, S3)  
-- Enhanced GenAI workflows  
-- User-specific dashboards  
+- Full API–dashboard integration  
+- Automated model retraining and monitoring  
+- Cloud deployment (AWS: EC2, S3, MLOps pipelines)  
+- Enhanced GenAI decision-support workflows  
+- Role-based dashboards and access control  
 
 ---
 
@@ -206,6 +237,6 @@ This is not a single-model project.
 
 It is a **forecasting intelligence system** designed to bridge:
 
-- Data → Models → Decisions  
+**Data → Models → Decisions**
 
 👉 Turning analytics into **real-world business impact**
