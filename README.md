@@ -1,4 +1,4 @@
-# 🧠 AI-Powered Retail Decision Intelligence Platform  
+# 🧠 AI-Powered Demand, Operations & Forecasting Intelligence System 
 ## 📦 SunnyBest Telecommunications *(Synthetic Case Study)*
 
 An end-to-end **AI, Machine Learning, and Generative AI–driven retail analytics platform** built for a **telecom and consumer electronics retailer — SunnyBest Telecommunications**.
