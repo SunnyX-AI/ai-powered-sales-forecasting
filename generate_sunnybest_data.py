@@ -1,6 +1,8 @@
+import sys
 import os
 import pickle
 from pathlib import Path
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -14,8 +16,22 @@ np.random.seed(42)
 SCALE_MODE = os.getenv("SCALE_MODE", "small").lower()
 print(f"🔧 Running SunnyBest generator in SCALE_MODE={SCALE_MODE}")
 
-START_DATE = "2021-01-01"
-END_DATE = "2024-12-31"
+# START_DATE = "2021-01-01"
+# END_DATE = "2024-12-31"
+# Default dates
+DEFAULT_START_DATE = "2021-01-01"
+DEFAULT_END_DATE = datetime.today().strftime("%Y-%m-%d")
+
+# Override with command line arguments if provided
+if len(sys.argv) >= 3:
+    START_DATE = sys.argv[1]
+    END_DATE = sys.argv[2]
+    print(f"📅 Using custom date range: {START_DATE} → {END_DATE}")
+else:
+    START_DATE = DEFAULT_START_DATE
+    END_DATE = DEFAULT_END_DATE
+    print(f"📅 Using default date range: {START_DATE} → {END_DATE}")
+
 N_PRODUCTS = 120
 N_STORES_EXTRA = 0
 OUTPUT_DIR = "data/raw/"
@@ -24,8 +40,9 @@ STATE_DIR = "data/state/"
 STATE_FILE = "sunnybest_generator_state.pkl"
 
 if SCALE_MODE == "large":
-    START_DATE = "2018-01-01"
-    END_DATE = "2024-12-31"
+    if len(sys.argv) < 3:
+        START_DATE = "2018-01-01"
+        END_DATE = datetime.today().strftime("%Y-%m-%d")
     N_PRODUCTS = 800
     N_STORES_EXTRA = 43   # 7 + 43 = 50 stores
     OUTPUT_DIR = "data/processed/"
