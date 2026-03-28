@@ -1,32 +1,49 @@
-# Ignore large processed files
+# -----------------------------
+# Data
+# -----------------------------
+data/raw/
 data/processed/
 
-# Ignore raw data
-data/raw/
+# -----------------------------
+# Models (IMPORTANT)
+# -----------------------------
+models/
 
-# Ignore Jupyter checkpoints
+# Ignore all model artifacts
+*.pkl
+*.joblib
+
+# -----------------------------
+# Notebooks
+# -----------------------------
 .ipynb_checkpoints/
 
-# Ignore Python cache
+# -----------------------------
+# Python
+# -----------------------------
 __pycache__/
+*.pyc
 
-# Ignore large temporary files
+# -----------------------------
+# Files
+# -----------------------------
 *.csv
 *.parquet
-- *.pkl
-+ # Allow model artifacts
-+ !models/
-+ !models/*.pkl
 
+# -----------------------------
 # OS
+# -----------------------------
 .DS_Store
 
+# -----------------------------
 # Environments & secrets
+# -----------------------------
 .env
 .env.*
 .venv/
 venv/
 
+# -----------------------------
 # MLflow
+# -----------------------------
 mlruns/
-
