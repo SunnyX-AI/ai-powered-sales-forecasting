@@ -12,3 +12,6 @@ query = "SELECT * FROM core.fact_sales"
 df = pd.read_sql(query, conn)
 
 print(df.head())
+
+
+print(df.info())
