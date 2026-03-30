@@ -326,25 +326,15 @@ docker compose down
 │   │   ├── assumptions.py
 │   │   ├── capacity_planning.py
 │   │   └── plan_generation.py
+    
+│   ├── /
+│   │   ├── scenario_engine.py
+│   │   ├── what_if.py
+│   │   ├── assumptions.py
+│   │   ├── capacity_planning.py
+│   │   └── plan_generation.py     
 
-│   ├── ai/
-│   │   ├── copilot.py
-│   │   ├── prompts.py
-│   │   ├── prompt_registry.py
-│   │   ├── openai_client.py
-│   │   ├── schemas.py
-│   │
-│   │   ├── rag/
-│   │   │   ├── build_kb.py
-│   │   │   ├── store.py
-│   │   │   └── retrieve.py
-│   │
-│   │   ├── tools/
-│   │   │   └── forecast_tools.py
-│   │
-│   │   └── services/
-│   │       ├── rag_qa.py
-│   │       └── assistant.py
+
 
 │   ├── agents/
 │   │   ├── base.py
