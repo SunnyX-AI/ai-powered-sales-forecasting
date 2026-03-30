@@ -432,7 +432,6 @@ sunnybest-ai-forecasting-intelligence/
     ├── architecture.png
     └── screenshots/
 ```
-```
 
 ---
 
