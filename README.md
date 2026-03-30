@@ -204,13 +204,14 @@ docker compose down
 
 # 📁 Project Structure
 
-```sunnybest-ai-forecasting-intelligence/
+```text
+sunnybest-ai-forecasting-intelligence/
 ├── README.md
 ├── pyproject.toml
 ├── requirements.txt
 ├── .gitignore
 ├── Makefile
-
+│
 ├── docs/
 │   ├── system_overview.md
 │   ├── business_context.md
@@ -222,7 +223,7 @@ docker compose down
 │   ├── api_reference.md
 │   ├── changelog.md
 │   └── roadmap.md
-
+│
 ├── data/
 │   ├── raw/
 │   │   ├── foundation/
@@ -246,10 +247,10 @@ docker compose down
 │   │
 │   ├── processed/                  # gitignored
 │   ├── external/
-│   └── knowledge/                 # AI/RAG knowledge base
+│   └── knowledge/                  # AI/RAG knowledge base
 │       ├── chunks.jsonl
 │       └── embeddings.npz
-
+│
 ├── notebooks/
 │   ├── 01_data_understanding.ipynb
 │   ├── 02_eda_system_overview.ipynb
@@ -262,25 +263,25 @@ docker compose down
 │   ├── 09_policy_impact_analysis.ipynb
 │   ├── 10_scenario_planning.ipynb
 │   └── 11_genai_rag_experiments.ipynb
-
+│
 ├── src/
 │   ├── __init__.py
-
+│   │
 │   ├── config/
 │   │   ├── settings.py
 │   │   ├── constraints.yaml
 │   │   └── registry.yaml
-
+│
 │   ├── data/
 │   │   ├── loaders.py
 │   │   ├── joins.py
 │   │   └── make_dataset.py
-
+│
 │   ├── validation/
 │   │   ├── schema_checks.py
 │   │   ├── data_quality.py
 │   │   └── business_rules.py
-
+│
 │   ├── features/
 │   │   ├── build_features.py
 │   │   ├── demand_features.py
@@ -288,7 +289,7 @@ docker compose down
 │   │   ├── promo_features.py
 │   │   ├── inventory_features.py
 │   │   └── operational_features.py
-
+│
 │   ├── forecasting/
 │   │   ├── train.py
 │   │   ├── predict.py
@@ -296,65 +297,83 @@ docker compose down
 │   │   ├── backtest.py
 │   │   ├── pipelines.py
 │   │   └── registry.py
-
+│
 │   ├── operations/
 │   │   ├── kpis.py
 │   │   ├── service_metrics.py
 │   │   ├── workload_analysis.py
 │   │   ├── bottlenecks.py
 │   │   └── operational_risk.py
-
+│
 │   ├── inventory/
 │   │   ├── stockout_model.py
 │   │   ├── replenishment.py
 │   │   ├── service_level.py
 │   │   └── risk_scoring.py
-
+│
 │   ├── pricing/
 │   │   ├── elasticity.py
 │   │   ├── build_elasticity.py
 │   │   └── optimizer.py
-
+│
 │   ├── policy/
 │   │   ├── policy_engine.py
 │   │   ├── policy_effects.py
 │   │   └── constraint_application.py
-
+│
 │   ├── planning/
 │   │   ├── scenario_engine.py
 │   │   ├── what_if.py
 │   │   ├── assumptions.py
 │   │   ├── capacity_planning.py
 │   │   └── plan_generation.py
-    
-│   ├── /
-│   │   ├── scenario_engine.py
-│   │   ├── what_if.py
-│   │   ├── assumptions.py
-│   │   ├── capacity_planning.py
-│   │   └── plan_generation.py     
-
-
-
+│
+│   ├── genai/
+│   │   ├── router.py
+│   │   ├── openai_client.py
+│   │   ├── schemas.py
+│   │   ├── assistant/
+│   │   │   ├── qa_assistant.py
+│   │   │   ├── forecast_explainer.py
+│   │   │   └── marketing_assistant.py
+│   │   ├── tools/
+│   │   │   ├── forecast_tool.py
+│   │   │   ├── assumptions_tool.py
+│   │   │   ├── changelog_tool.py
+│   │   │   └── inventory_tool.py
+│   │   ├── prompts/
+│   │   │   ├── system_prompt.md
+│   │   │   ├── qa_prompt.md
+│   │   │   ├── forecast_explainer_prompt.md
+│   │   │   └── marketing_prompt.md
+│   │   └── rag/
+│   │       ├── ingest.py
+│   │       ├── loaders.py
+│   │       ├── chunking.py
+│   │       ├── embeddings.py
+│   │       ├── vector_store.py
+│   │       ├── retrieve.py
+│   │       └── context_builder.py
+│
 │   ├── agents/
 │   │   ├── base.py
 │   │   ├── pricing_agent.py
 │   │   ├── promo_agent.py
 │   │   ├── inventory_agent.py
 │   │   └── policies.py
-
+│
 │   ├── monitoring/
 │   │   ├── metrics.py
 │   │   ├── drift.py
 │   │   ├── rules.py
 │   │   └── store.py
-
+│
 │   ├── governance/
 │   │   ├── audit_log.py
 │   │   ├── schemas.py
 │   │   ├── fairness.py
 │   │   └── explainability.py
-
+│
 │   ├── api/
 │   │   ├── app.py
 │   │   └── routes/
@@ -362,44 +381,44 @@ docker compose down
 │   │       ├── agents.py
 │   │       ├── monitoring.py
 │   │       └── ai.py
-
+│
 │   ├── dashboard/
 │   │   └── streamlit_app.py
-
+│
 │   ├── spark/
 │   │   ├── spark_session.py
 │   │   ├── spark_etl.py
 │   │   ├── spark_aggregations.py
 │   │   └── spark_feature_engineering.py
-
+│
 │   └── warehouse/
 │       ├── staging.sql
 │       ├── marts.sql
 │       ├── queries.sql
 │       └── schema.sql
-
+│
 ├── models/
 │   ├── demand_forecast.pkl
 │   └── stockout_model.pkl
-
+│
 ├── monitoring/
 │   ├── predictions_log.csv
 │   ├── forecast_metrics.csv
 │   ├── drift_report.csv
 │   ├── agent_decisions.csv
 │   └── human_overrides.csv
-
+│
 ├── docker/
 │   ├── Dockerfile
 │   └── Dockerfile.streamlit
-
+│
 ├── scripts/
 │   ├── run_pipeline.sh
 │   └── demo.sh
-
+│
 ├── infra/
 │   └── terraform/
-
+│
 ├── tests/
 │   ├── test_data.py
 │   ├── test_features.py
@@ -408,10 +427,11 @@ docker compose down
 │   ├── test_policy.py
 │   ├── test_api.py
 │   └── test_ai.py
-
+│
 └── assets/
     ├── architecture.png
     └── screenshots/
+```
 ```
 
 ---
