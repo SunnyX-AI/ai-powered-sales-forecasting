@@ -19,7 +19,7 @@ print(df.head())
 
 # 3. Connect to Supabase
 supabase_engine = create_engine(
-    "postgresql+psycopg2://postgres:navenoture01@db.xgtnldlybnsakxwonbac.supabase.co:5432/postgres?sslmode=require"
+    "postgresql+psycopg2://postgres:BonaData2026@db.xgtnldlybnsakxwonbac.supabase.co:5432/postgres?sslmode=require"
 )
 
 # 4. Write to Supabase
