@@ -24,11 +24,16 @@ models/
 __pycache__/
 *.pyc
 
+
 # -----------------------------
 # Files
 # -----------------------------
 *.csv
 *.parquet
+
+# Database dumps
+sfs_dump.sql
+*.dumps
 
 # -----------------------------
 # OS

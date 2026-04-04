@@ -1,0 +1,148 @@
+# 🧑‍💻 SunnyBest Forecasting System (SFS) – Role Alignment
+
+This section defines how different technical roles interact with the SFS, ensuring clear ownership, collaboration, and production readiness.
+
+The system is designed so that **Data Engineers, Data Scientists, Machine Learning Engineers, and AI Engineers** can contribute independently while working within a unified architecture.
+
+---
+
+# 🏗️ 1. Data Engineer
+
+## Responsibility
+Owns the **data foundation** of the system, ensuring that all datasets are reliable, structured, and production-ready.
+
+## Core Focus Areas
+- Data ingestion (CSV, APIs, databases)
+- Data cleaning and validation
+- Data modelling (fact/dimension tables)
+- Pipeline orchestration
+- Feature-ready dataset creation
+
+## SFS Components
+- `src/data/make_dataset.py`
+- `src/data/validation.py`
+- `src/features/build_features.py`
+- `src/features/calendar_features.py`
+- `src/features/demand_features.py`
+- Raw → processed data layers (`data/raw/`, `data/processed/`)
+
+## Key Contributions
+- Builds reusable pipelines for:
+  - sales data
+  - inventory data
+  - promotions
+  - external drivers (weather, calendar)
+- Ensures data consistency across modules
+- Provides clean inputs for modelling and AI layers
+
+## Outputs
+- Validated datasets
+- Feature tables for modelling
+- Structured data for API and dashboard use
+
+---
+
+# 📊 2. Data Scientist
+
+## Responsibility
+Owns **analytical modelling and business insight generation**, translating data into meaningful predictions and decisions.
+
+## Core Focus Areas
+- Forecasting models
+- Statistical analysis
+- Causal inference (promotion impact)
+- Experimentation and validation
+- Scenario analysis
+
+## SFS Components
+- `src/forecasting/`
+- `src/pricing/`
+- `src/inventory/stockout_model.py`
+- `src/planning/scenario_engine.py`
+- Segmentation workflows
+
+## Key Contributions
+- Develops demand forecasting models
+- Builds price elasticity and promotion uplift models
+- Designs stockout prediction logic
+- Performs backtesting and evaluation
+- Interprets results for business use
+
+## Outputs
+- Trained models
+- Forecast outputs
+- Analytical insights
+- Inputs to decision and planning modules
+
+---
+
+# ⚙️ 3. Machine Learning Engineer
+
+## Responsibility
+Owns **model productionisation and system reliability**, ensuring models run efficiently and reliably in real-world environments.
+
+## Core Focus Areas
+- Model deployment
+- API integration
+- Pipeline automation
+- Monitoring and alerting
+- Performance optimisation
+
+## SFS Components
+- `src/api/app.py`
+- `src/api/routes/predict.py`
+- `src/forecasting/pipelines.py`
+- `src/forecasting/backtest.py`
+- `src/monitoring/`
+
+## Key Contributions
+- Deploys forecasting and inventory models via API
+- Builds scalable prediction pipelines
+- Automates model training and retraining
+- Implements monitoring (accuracy, drift, alerts)
+- Ensures system performance and reliability
+
+## Outputs
+- Production-ready APIs
+- Automated pipelines
+- Monitoring dashboards and logs
+- Scalable model infrastructure
+
+---
+
+# 🤖 4. AI Engineer
+
+## Responsibility
+Owns the **intelligent layer of the system**, enabling natural language interaction, reasoning, and decision support.
+
+## Core Focus Areas
+- GenAI integration (LLMs)
+- Retrieval-Augmented Generation (RAG)
+- Prompt engineering
+- Agent design
+- Explainability and decision support
+
+## SFS Components
+- `src/ai/copilot.py`
+- `src/ai/services/assistant.py`
+- `src/ai/rag/`
+- `src/api/routes/ai.py`
+
+## Key Contributions
+- Builds AI assistant for business users
+- Enables natural language queries on forecasts and KPIs
+- Generates explanations for model outputs
+- Supports decision reasoning (why/what-if analysis)
+- Integrates knowledge base (`docs/`) into AI responses
+
+## Outputs
+- AI assistant responses
+- Insight summaries
+- Decision explanations
+- Conversational interface for the system
+
+---
+
+# 🔗 How the Roles Work Together
+
+The SFS follows a layered architecture where each role builds on the work of the previous layer:

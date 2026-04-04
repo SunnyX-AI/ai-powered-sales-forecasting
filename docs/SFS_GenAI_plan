@@ -1,0 +1,434 @@
+# SunnyBest Forecasting System (SFS) – GenAI Enablement Plan
+
+This document outlines the plan for transforming the SunnyBest Forecasting System (SFS) into a **GenAI-enabled retail intelligence platform**.
+
+The aim is not to replace forecasting models with GenAI, but to build a **Generative AI layer on top of SFS** so users can interact with forecasts, business rules, and operational insights using natural language.
+
+---
+
+# 1. Vision
+
+The GenAI version of SFS will allow users to:
+
+- ask questions about forecasts and business performance in plain English
+- receive explanations of model outputs and retail trends
+- generate marketing campaign ideas based on business signals
+- obtain decision-ready summaries for planners and managers
+- interact with system documentation through a built-in assistant
+
+In simple terms, SFS will evolve from:
+
+> **forecasting system**
+
+to
+
+> **forecasting + explanation + recommendation + conversational business copilot**
+
+---
+
+# 2. Core Objective
+
+The objective is to build a **GenAI Copilot layer** for SFS that can:
+
+1. retrieve information from SFS documentation
+2. read and interpret forecast outputs and retail signals
+3. answer user questions in natural language
+4. generate business recommendations and marketing campaigns
+5. support decision-making for different types of users
+
+---
+
+# 3. Guiding Principle
+
+A very important principle for this work is:
+
+- **data, models, and rules decide what is happening**
+- **GenAI explains, summarizes, recommends, and communicates it clearly**
+
+This means:
+
+- forecasting remains the job of forecasting models
+- GenAI becomes the business-facing intelligence layer
+
+---
+
+# 4. What Will Make SFS “GenAI-Worthy”
+
+To make SFS truly GenAI-worthy, the system should support the following capabilities:
+
+## 4.1 Natural Language Interaction
+Users should be able to ask questions such as:
+
+- What products are expected to sell most next week?
+- Why is demand falling in a particular store?
+- What should we promote this weekend?
+- Summarize the forecast for management.
+- What does `discount_pct` mean?
+
+---
+
+## 4.2 Grounded Responses
+The assistant must answer using:
+
+- SFS documentation
+- forecast outputs
+- inventory signals
+- sales trends
+- business rules
+
+This ensures responses are based on system knowledge rather than guesswork.
+
+---
+
+## 4.3 Business Usefulness
+The GenAI layer must produce outputs that are genuinely useful, such as:
+
+- explanations
+- summaries
+- recommendations
+- campaign suggestions
+- operational insights
+
+---
+
+## 4.4 Tool-Driven Intelligence
+The assistant should not only “chat”.
+
+It should eventually be able to call tools that:
+
+- fetch forecast outputs
+- retrieve inventory conditions
+- identify declining products
+- detect overstock situations
+- summarize trends
+
+---
+
+# 5. Data Assets Available for GenAI
+
+SFS already has a strong set of datasets that can support GenAI features.
+
+## 5.1 Existing Datasets
+
+- `sales`
+- `products`
+- `stores`
+- `calendar`
+- `promotions`
+- `weather`
+- `inventory`
+- `customer_activity`
+- `store_operations`
+- `policy_regimes`
+- `restriction_events`
+
+## 5.2 Why This Data Is Valuable for GenAI
+
+This data can be used to create retail signals such as:
+
+- low sales
+- high inventory
+- strong seasonal demand
+- promo opportunities
+- store underperformance
+- weather-linked demand shifts
+- weekend and payday effects
+
+These signals can then be translated into business language by GenAI.
+
+---
+
+# 6. GenAI Modules to Build
+
+The SFS GenAI layer will be developed through a series of focused modules.
+
+---
+
+## 6.1 Module 1 – Documentation Assistant
+
+### Purpose
+Allow users to ask questions about the SFS itself.
+
+### Example Questions
+- How does SFS forecast demand?
+- What does `promo_flag` mean?
+- What datasets are used?
+- What is the forecasting target?
+
+### Inputs
+- `docs/business_context.md`
+- `docs/system_overview.md`
+- `docs/data_dictionary.md`
+- `docs/methodology.md`
+- `docs/assumptions.md`
+- `docs/forecasting_targets.md`
+- `docs/changelog.md`
+
+### Output
+A grounded assistant that explains the system and its components in plain English.
+
+---
+
+## 6.2 Module 2 – Forecast Explanation Assistant
+
+### Purpose
+Explain forecast outputs and business patterns.
+
+### Example Questions
+- Why is demand high for this product?
+- Why did this forecast change?
+- Which stores are growing?
+- Why are some categories underperforming?
+
+### Inputs
+- forecast outputs
+- sales trends
+- calendar effects
+- weather context
+- promotions context
+- product and store metadata
+
+### Output
+Plain-English explanations of forecast behavior and business drivers.
+
+---
+
+## 6.3 Module 3 – Decision Summary Assistant
+
+### Purpose
+Turn model outputs into decision-ready summaries.
+
+### Example Questions
+- What should we restock this week?
+- Which stores need attention?
+- What are the biggest business risks?
+- Summarize this week’s performance.
+
+### Inputs
+- forecast outputs
+- inventory conditions
+- sales movement
+- business rules
+
+### Output
+Concise summaries for planners, store managers, and decision-makers.
+
+---
+
+## 6.4 Module 4 – Marketing Campaign Generator
+
+### Purpose
+Generate marketing ideas and campaign messages based on business signals.
+
+### Example Questions
+- What should we promote this weekend?
+- Which product needs a campaign?
+- Give me a campaign message for this store.
+- What kind of promotion should we run?
+
+### Inputs
+- sales trends
+- inventory levels
+- calendar
+- weather
+- promotions history
+- customer activity
+
+### Output
+- campaign strategy
+- target product/store
+- marketing message
+- business justification
+
+This is expected to be one of the strongest GenAI use cases in SFS.
+
+---
+
+## 6.5 Module 5 – Executive Summary Generator
+
+### Purpose
+Generate management-friendly briefings from operational outputs.
+
+### Example Questions
+- Summarize the latest forecast for leadership.
+- Give me the top 5 risks.
+- Write a short planning note for management.
+
+### Inputs
+- latest forecasts
+- trend summaries
+- inventory signals
+- selected KPIs
+
+### Output
+Short, professional summaries for stakeholders.
+
+---
+
+## 6.6 Module 6 – Scenario Assistant (Later Stage)
+
+### Purpose
+Support conversational what-if analysis.
+
+### Example Questions
+- What if we increase discount by 10%?
+- What if rainfall increases this week?
+- What if a store has low stock and rising demand?
+
+### Inputs
+- scenario logic
+- business rules
+- relevant model outputs
+
+### Output
+A conversational explanation of expected business effects.
+
+This module should come later, after the core GenAI modules are working.
+
+---
+
+# 7. Knowledge Sources for GenAI
+
+The GenAI layer should use two kinds of knowledge.
+
+---
+
+## 7.1 Static Knowledge
+
+This is documentation that changes slowly.
+
+### Examples
+- business context
+- methodology
+- assumptions
+- data dictionary
+- target definitions
+- system design documents
+
+### Purpose
+Helps the assistant explain what the system is and how it works.
+
+---
+
+## 7.2 Dynamic Knowledge
+
+This is data and outputs that change over time.
+
+### Examples
+- recent forecasts
+- inventory conditions
+- latest sales trends
+- promotion status
+- current business signals
+
+### Purpose
+Helps the assistant answer questions about what is happening now.
+
+---
+
+# 8. Technical Approach
+
+The GenAI build should follow a staged approach.
+
+---
+
+## Stage 1 – Build a Simple RAG Assistant
+Create a simple assistant that can answer questions from SFS documents only.
+
+### Goal
+Establish a grounded documentation assistant.
+
+### Deliverable
+A basic chatbot or command-line assistant that responds using project documents.
+
+---
+
+## Stage 2 – Organize the SFS Knowledge Base
+Prepare all SFS documents in a consistent and structured format.
+
+### Goal
+Make project knowledge easy to retrieve.
+
+### Deliverable
+A clean `docs/` folder containing all core business and technical documents.
+
+---
+
+## Stage 3 – Add Retrieval Pipeline
+Chunk the documents, embed them, and make them searchable.
+
+### Goal
+Enable the assistant to retrieve relevant knowledge before responding.
+
+### Deliverable
+A retrieval pipeline for SFS documents.
+
+---
+
+## Stage 4 – Add Forecast and Business Output Context
+Allow the assistant to access selected forecast outputs and signal tables.
+
+### Goal
+Move beyond static Q&A into live business insight.
+
+### Deliverable
+Assistant can answer questions using both documentation and outputs.
+
+---
+
+## Stage 5 – Build the Marketing Campaign Generator
+Use structured retail signals and GenAI prompts to generate campaign ideas.
+
+### Goal
+Create a business-facing GenAI feature that feels practical and impressive.
+
+### Deliverable
+A campaign generation workflow using real SFS context.
+
+---
+
+## Stage 6 – Build Decision and Executive Summary Features
+Allow the assistant to summarize risks, opportunities, and recommended actions.
+
+### Goal
+Make SFS useful for planners, managers, and executives.
+
+### Deliverable
+Decision summaries and leadership-style briefings.
+
+---
+
+## Stage 7 – Introduce Tool Calling
+Enable the assistant to call small functions for forecast lookup, trend extraction, and signal detection.
+
+### Goal
+Make the assistant more reliable and useful.
+
+### Deliverable
+A GenAI layer that combines retrieval with tool-based actions.
+
+---
+
+# 9. Suggested Project Structure
+
+A possible structure for the GenAI layer is shown below.
+
+```text
+src/
+└── genai/
+    ├── openai_client.py
+    ├── prompts.py
+    ├── schemas.py
+    ├── orchestrator.py
+    ├── assistant.py
+    ├── tools/
+    │   ├── forecast_tools.py
+    │   ├── inventory_tools.py
+    │   ├── marketing_tools.py
+    │   └── summary_tools.py
+    └── rag/
+        ├── build_kb.py
+        ├── chunk_docs.py
+        ├── embed_docs.py
+        ├── retrieve.py
+        └── store.py

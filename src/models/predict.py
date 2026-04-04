@@ -19,7 +19,7 @@ import joblib
 import pandas as pd
 import numpy as np
 
-from src.data.make_dataset import build_merged_dataset
+from data.make_weekly_dataset import build_merged_dataset
 from src.features.build_features import build_forecast_features, build_stockout_features
 
 

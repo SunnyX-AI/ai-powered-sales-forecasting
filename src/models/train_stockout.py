@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
 # project imports
-from src.data.make_dataset import build_merged_dataset
+from data.make_weekly_dataset import build_merged_dataset
 from src.features.build_features import build_stockout_features
 
 

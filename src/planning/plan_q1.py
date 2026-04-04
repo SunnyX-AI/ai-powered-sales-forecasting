@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import joblib
 
-from src.data.make_dataset import build_merged_dataset
+from data.make_weekly_dataset import build_merged_dataset
 from src.features.build_features import build_forecast_features
 from src.forecasting.history_window import select_history_window
 from src.forecasting.future_frame import build_future_frame, BaselineAssumptions
