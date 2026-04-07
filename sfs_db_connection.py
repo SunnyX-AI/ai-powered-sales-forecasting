@@ -2,6 +2,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 from urllib.parse import quote_plus
 
+
+# For CHI CHI
 host = "YOUR_HOST" # add host
 port = 5432
 database = "postgres" 
@@ -20,6 +22,31 @@ print(df.head())
 # host = "aws-1-eu-central-1.pooler.supabase.com"
 # user = "sfs_user.ogkdfmkybqtrsglcizzt"
 # password = "Chinenyennabude123"
+
+# For MANOFx
+import pandas as pd
+from sqlalchemy import create_engine
+from urllib.parse import quote_plus
+
+host = "aws-1-eu-central-1.pooler.supabase.com"
+port = 5432
+database = "postgres"
+user = "mano_ro.ogkdfmkybqtrsglcizzt"
+password = quote_plus("Manofx12345")
+
+engine = create_engine(
+    f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}",
+    pool_pre_ping=True
+)
+
+df = pd.read_sql("SELECT * FROM core.fact_sales LIMIT 5", engine)
+print(df.head())
+
+
+# host = "aws-1-eu-central-1.pooler.supabase.com"
+# user = "mano_ro.ogkdfmkybqtrsglcizzt"
+# password = "Manofx12345"
+
 
 # Table names "core"
 
