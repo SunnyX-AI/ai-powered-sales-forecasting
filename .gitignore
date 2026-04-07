@@ -52,3 +52,9 @@ venv/
 # MLflow
 # -----------------------------
 mlruns/
+
+# -----------------------------
+# Sensitive DB scripts
+# -----------------------------
+upload_to_supabase.py
+my_db_connection.py
