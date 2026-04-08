@@ -2,3 +2,12 @@ rolling monitoring (every week automatically)
 alerting when error spikes
 dashboard (Streamlit 👀)
 model drift detection
+
+
+SFS Supabase
+
+Project: SFS_database
+User: postgres
+Password: Bonabossfs01.
+
+testing branch workflow
