@@ -3,8 +3,6 @@ FastAPI app for SunnyBest Retail Demand Intelligence System.
 
 Endpoints:
 - GET  /health
-- POST /predict  -> revenue forecast + stockout probability + risk band
-- GET  /predict/example -> run prediction using a real row from merged df
 - GET  /pricing/elasticity -> elasticity table
 - GET  /monitoring/recent -> recent prediction logs
 - GET  /monitoring/alerts -> simple alert rules
@@ -19,17 +17,15 @@ from typing import Optional, Dict, Any, List
 
 import pandas as pd
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from src.models.predict import predict_from_row, predict_example_from_existing_data
-from src.monitoring.store import append_prediction_log, read_recent_predictions
+from src.monitoring.store import read_recent_predictions
 from src.monitoring.rules import generate_alerts
 from src.api.routes.agents import router as agents_router
 from src.api.routes.decision import router as decision_router
-from src.api.routes.predict import router as predict_router
 from src.planning.plan_q1 import run_revenue_plan
 
-# ✅ NEW GENAI IMPORTS
+# ✅ GenAI imports
 from src.genai.schemas import AskRequest, AskResponse
 from src.genai.router import route_question
 
@@ -37,18 +33,20 @@ from src.genai.router import route_question
 app = FastAPI(
     title="AI-Powered Retail Decision Intelligence Platform",
     version="1.0.0",
-    description="Forecast revenue and predict stockout risk. Built from the SunnyBest project pipeline."
+    description="Forecast revenue and planning intelligence with GenAI support for SunnyBest."
 )
 
 app.include_router(agents_router)
 app.include_router(decision_router)
-app.include_router(predict_router)
+
+# Remove this too if src/api/routes/predict.py depends on deleted predict.py
+# from src.api.routes.predict import router as predict_router
+# app.include_router(predict_router)
 
 
 # -----------------------------
 # Load artifacts at startup
 # -----------------------------
-
 ELASTICITY_PATH = os.getenv("ELASTICITY_PATH", "data/processed/elasticity_by_category.csv")
 
 
@@ -81,37 +79,6 @@ DOCS: List[dict] = [
 # -----------------------------
 # Request / Response Schemas
 # -----------------------------
-class PredictRequest(BaseModel):
-    # Pricing
-    price: float = Field(..., ge=0)
-    regular_price: float = Field(..., ge=0)
-    discount_pct: float = Field(0, ge=0, le=100)
-    promo_flag: int = Field(0, ge=0, le=1)
-
-    # Time
-    month: int = Field(..., ge=1, le=12)
-    is_weekend: int = Field(0, ge=0, le=1)
-    is_holiday: int = Field(0, ge=0, le=1)
-    is_payday: int = Field(0, ge=0, le=1)
-
-    # Product / Store
-    category: str
-    store_size: str
-
-    # Weather
-    temperature_c: float
-    rainfall_mm: float
-
-    # Inventory
-    starting_inventory: int = Field(..., ge=0)
-
-
-class PredictResponse(BaseModel):
-    predicted_revenue: float
-    stockout_probability: float
-    stockout_risk_band: str
-
-
 class RevenuePlanRequest(BaseModel):
     anchor_date: str = "2024-12-31"
     start_date: str = "2025-01-01"
@@ -149,45 +116,6 @@ def get_elasticity(category: Optional[str] = None) -> Dict[str, Any]:
     return {"items": df.to_dict(orient="records")}
 
 
-@app.post("/predict", response_model=PredictResponse)
-def predict(req: PredictRequest) -> PredictResponse:
-    payload = req.model_dump()
-    out = predict_from_row(payload)
-
-    p = float(out.get("stockout_probability", 0.0))
-    if p >= 0.7:
-        band = "HIGH"
-    elif p >= 0.4:
-        band = "MEDIUM"
-    else:
-        band = "LOW"
-
-    out["stockout_risk_band"] = band
-
-    try:
-        append_prediction_log(request_payload=payload, response_payload=out)
-    except Exception:
-        pass
-
-    return PredictResponse(**out)
-
-
-@app.get("/predict/example")
-def predict_example(
-    date: Optional[str] = None,
-    store_id: Optional[int] = None,
-    product_id: Optional[int] = None
-) -> Dict[str, Any]:
-    """
-    Example usage:
-    /predict/example
-    /predict/example?store_id=1
-    /predict/example?product_id=1001
-    /predict/example?date=2024-12-25&store_id=1&product_id=1001
-    """
-    return predict_example_from_existing_data(date=date, store_id=store_id, product_id=product_id)
-
-
 @app.post("/plan/revenue", tags=["planning"])
 def plan_revenue(req: RevenuePlanRequest) -> Dict[str, Any]:
     """
@@ -207,7 +135,6 @@ def plan_revenue(req: RevenuePlanRequest) -> Dict[str, Any]:
     )
 
 
-# ✅ UPDATED /ask ENDPOINT
 @app.post("/ask", response_model=AskResponse, tags=["genai"])
 def ask(req: AskRequest) -> AskResponse:
     answer = route_question(
@@ -222,7 +149,7 @@ def ask(req: AskRequest) -> AskResponse:
 def monitoring_recent(limit: int = 50) -> Dict[str, Any]:
     df = read_recent_predictions(limit=limit)
     if df.empty:
-        return {"items": [], "note": "No logs yet. Make some /predict calls first."}
+        return {"items": [], "note": "No logs yet. Make some logging-enabled calls first."}
     return {"items": df.to_dict(orient="records")}
 
 
