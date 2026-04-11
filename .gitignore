@@ -34,7 +34,6 @@ __pycache__/
 # Database dumps
 sfs_dump.sql
 *.dumps
-
 # -----------------------------
 # OS
 # -----------------------------
@@ -53,8 +52,3 @@ venv/
 # -----------------------------
 mlruns/
 
-# -----------------------------
-# Sensitive DB scripts
-# -----------------------------
-upload_to_supabase.py
-my_db_connection.py
