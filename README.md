@@ -1,4 +1,4 @@
-# 🧠 SunnyBest Forecasting System (SFS)  
+# 🧠 SunnyX Forecasting System (SFS)  
 ## 📦 AI-Powered Demand, Inventory & Retail Intelligence Platform
 
 An end-to-end **AI, Machine Learning, and Generative AI–driven forecasting system** built for a telecom and consumer electronics retailer.
