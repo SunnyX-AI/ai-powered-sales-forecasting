@@ -5,11 +5,7 @@ from typing import Optional, Dict, Any, List
 
 import pandas as pd
 from fastapi import FastAPI
-from pydantic import BaseModel
 
-from src.monitoring.store import read_recent_predictions
-from src.monitoring.rules import generate_alerts
-from src.planning.plan_q1 import run_revenue_plan
 from src.genai.schemas import AskRequest, AskResponse
 from src.genai.router import route_question
 
@@ -17,7 +13,7 @@ from src.genai.router import route_question
 app = FastAPI(
     title="AI-Powered Retail Decision Intelligence Platform",
     version="1.0.0",
-    description="SunnyX Forecasting System API with planning, monitoring, pricing, and GenAI support."
+    description="SunnyX Forecasting System API with pricing and GenAI support."
 )
 
 
@@ -50,15 +46,6 @@ DOCS: List[dict] = [
 ]
 
 
-class RevenuePlanRequest(BaseModel):
-    anchor_date: str = "2024-12-31"
-    start_date: str = "2025-01-01"
-    end_date: str = "2025-03-31"
-    history_months: int = 6
-    promo_flag: int = 0
-    discount_pct: float = 0.0
-
-
 @app.get("/health")
 def health() -> Dict[str, Any]:
     return {"status": "ok", "app": "main"}
@@ -80,18 +67,6 @@ def get_elasticity(category: Optional[str] = None) -> Dict[str, Any]:
     return {"items": df.to_dict(orient="records")}
 
 
-@app.post("/plan/revenue", tags=["planning"])
-def plan_revenue(req: RevenuePlanRequest) -> Dict[str, Any]:
-    return run_revenue_plan(
-        anchor_date=req.anchor_date,
-        start_date=req.start_date,
-        end_date=req.end_date,
-        history_months=req.history_months,
-        promo_flag=req.promo_flag,
-        discount_pct=req.discount_pct,
-    )
-
-
 @app.post("/ask", response_model=AskResponse, tags=["genai"])
 def ask(req: AskRequest) -> AskResponse:
     answer = route_question(
@@ -100,18 +75,3 @@ def ask(req: AskRequest) -> AskResponse:
         docs=DOCS
     )
     return AskResponse(answer=answer)
-
-
-@app.get("/monitoring/recent", tags=["monitoring"])
-def monitoring_recent(limit: int = 50) -> Dict[str, Any]:
-    df = read_recent_predictions(limit=limit)
-    if df.empty:
-        return {"items": [], "note": "No logs yet."}
-    return {"items": df.to_dict(orient="records")}
-
-
-@app.get("/monitoring/alerts", tags=["monitoring"])
-def monitoring_alerts(limit: int = 200) -> Dict[str, Any]:
-    df = read_recent_predictions(limit=limit)
-    alerts = generate_alerts(df)
-    return {"alerts": alerts, "count": len(alerts)}
