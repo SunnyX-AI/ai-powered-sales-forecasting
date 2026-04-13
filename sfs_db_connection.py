@@ -54,7 +54,7 @@ print(df.head())
 
 
 # dim_calendar
-# dim_policies
+# dim_policy_regimes
 # dim_products
 # dim_stores
 # fact_customer_activity
