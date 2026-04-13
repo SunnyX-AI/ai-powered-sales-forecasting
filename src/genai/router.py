@@ -28,10 +28,6 @@ def build_docs_context(docs: List[dict]) -> str:
 
 
 def search_docs(question: str, docs: List[dict]) -> Optional[str]:
-    """
-    Simple keyword-based doc search.
-    Returns the first matching doc text if found.
-    """
     q = question.lower()
 
     keyword_map = {
@@ -54,38 +50,108 @@ def search_docs(question: str, docs: List[dict]) -> Optional[str]:
     return None
 
 
+def explain_stockout_from_payload(payload: Dict[str, Any]) -> str:
+    starting_inventory = payload.get("starting_inventory")
+    promo_flag = payload.get("promo_flag")
+    discount_pct = payload.get("discount_pct")
+
+    parts = []
+
+    if starting_inventory is not None:
+        if starting_inventory <= 5:
+            parts.append(f"starting inventory is very low at {starting_inventory}")
+        elif starting_inventory <= 20:
+            parts.append(f"starting inventory is moderate at {starting_inventory}")
+        else:
+            parts.append(f"starting inventory is relatively healthy at {starting_inventory}")
+
+    if promo_flag == 1:
+        parts.append("a promotion is active, which may increase demand")
+
+    if discount_pct is not None and discount_pct > 0:
+        parts.append(f"the discount of {discount_pct}% may further increase sales pressure on inventory")
+
+    if not parts:
+        return "Stockout risk depends on how available inventory compares with demand."
+
+    return "Stockout risk is influenced because " + "; ".join(parts) + "."
+
+
+def explain_revenue_from_payload(payload: Dict[str, Any]) -> str:
+    price = payload.get("price")
+    units_sold = payload.get("units_sold")
+    promo_flag = payload.get("promo_flag")
+    discount_pct = payload.get("discount_pct")
+
+    parts = []
+
+    if price is not None:
+        parts.append(f"price is {price}")
+
+    if units_sold is not None:
+        parts.append(f"units sold is {units_sold}")
+
+    if promo_flag == 1:
+        parts.append("promotion may be supporting sales volume")
+
+    if discount_pct is not None and discount_pct > 0:
+        parts.append(f"a {discount_pct}% discount may help increase units sold, though it can reduce margin")
+
+    if not parts:
+        return "Revenue is typically influenced by units sold and price."
+
+    return "Revenue is being shaped by " + "; ".join(parts) + "."
+
+
+def explain_pricing_from_payload(payload: Dict[str, Any]) -> str:
+    price = payload.get("price")
+    regular_price = payload.get("regular_price")
+    discount_pct = payload.get("discount_pct")
+
+    if price is None and regular_price is None and discount_pct is None:
+        return "Pricing affects demand differently across categories and helps assess sales and revenue impact."
+
+    parts = []
+
+    if regular_price is not None:
+        parts.append(f"regular price is {regular_price}")
+
+    if price is not None:
+        parts.append(f"current price is {price}")
+
+    if discount_pct is not None:
+        parts.append(f"discount percentage is {discount_pct}%")
+
+    return "Pricing context shows that " + "; ".join(parts) + "."
+
+
 def offline_answer(
     question: str,
     payload: Optional[Dict[str, Any]] = None,
     docs: Optional[List[dict]] = None
 ) -> str:
-    """
-    Rule-based fallback so /ask works without OpenAI credits.
-    """
     q = question.lower()
     payload = payload or {}
     docs = docs or []
 
     if "units_sold" in q or "units sold" in q:
+        if "units_sold" in payload:
+            return f"In SFS, units_sold is the number of units sold. In this case, the provided units_sold value is {payload['units_sold']}."
         return "In SFS, units_sold represents the number of units of a product sold over a given period."
 
     if "stockout" in q:
-        if "starting_inventory" in payload:
-            inv = payload["starting_inventory"]
-            return (
-                f"A stockout occurs when available inventory cannot meet demand. "
-                f"In this case, the provided starting_inventory is {inv}, which may increase stockout risk if demand is high."
-            )
-        return "A stockout occurs when available inventory cannot meet demand."
+        return explain_stockout_from_payload(payload)
 
     if "promotion" in q or "promo" in q:
+        if payload.get("promo_flag") == 1:
+            return "A promotion is active. Promotions typically increase demand, but they can also increase stockout risk if inventory is not sufficient."
         return "Promotions typically increase demand, but they can also increase stockout risk if inventory is not sufficient."
 
     if "price" in q or "pricing" in q or "elasticity" in q:
-        return "Pricing affects demand differently across categories. In SFS, pricing intelligence helps assess how price changes may influence sales and revenue."
+        return explain_pricing_from_payload(payload)
 
     if "revenue" in q:
-        return "Revenue in SFS is typically driven by units sold and price, and can be forecast to support planning decisions."
+        return explain_revenue_from_payload(payload)
 
     doc_hit = search_docs(question, docs)
     if doc_hit:
@@ -102,15 +168,11 @@ def route_question(
     payload = payload or {}
     docs = docs or []
 
-    # 1. Try offline rules first for common SFS questions
     offline = offline_answer(question=question, payload=payload, docs=docs)
 
-    # If offline gave a specific answer, return it directly
-    # We only fall through to OpenAI when the fallback is generic
     if not offline.startswith("I’m currently running in offline mode"):
         return offline
 
-    # 2. Try OpenAI for richer response
     docs_context = build_docs_context(docs)
 
     user_prompt = f"""
@@ -130,5 +192,4 @@ Available Documentation:
             user_prompt=user_prompt
         )
     except Exception:
-        # 3. Final safe fallback
         return offline
